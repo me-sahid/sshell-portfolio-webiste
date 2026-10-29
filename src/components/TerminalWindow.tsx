@@ -28,7 +28,7 @@ export const TerminalWindow: React.FC = () => {
   const [isCheered, setIsCheered] = useState<boolean>(false)
 
   // Dynamic window width measurement for Pacman bar
-  const [barLength, setBarLength] = useState<number>(50)
+  const [barLength, setBarLength] = useState<number>(30)
 
   // Drag tracking refs
   const dragStartRef = useRef<{ startX: number; startY: number; initX: number; initY: number }>({
@@ -58,15 +58,21 @@ export const TerminalWindow: React.FC = () => {
     const updateBarSize = () => {
       if (terminalBodyRef.current) {
         const containerWidth = terminalBodyRef.current.clientWidth
-        // Each monospace char ~8.4px, subtract ~140px for margins, brackets & percentage
-        const availableChars = Math.floor((containerWidth - 140) / 8.5)
-        setBarLength(Math.max(16, Math.min(85, availableChars)))
+        // Each monospace char ~7.2px on mobile (at text-[11px]), ~8.5px on desktop
+        const charWidth = window.innerWidth < 640 ? 7.2 : 8.5
+        const marginOffset = window.innerWidth < 640 ? 120 : 140
+        const availableChars = Math.floor((containerWidth - marginOffset) / charWidth)
+        setBarLength(Math.max(8, Math.min(80, availableChars)))
       }
     }
 
     updateBarSize()
     window.addEventListener('resize', updateBarSize)
-    return () => window.removeEventListener('resize', updateBarSize)
+    window.addEventListener('orientationchange', updateBarSize)
+    return () => {
+      window.removeEventListener('resize', updateBarSize)
+      window.removeEventListener('orientationchange', updateBarSize)
+    }
   }, [isMaximized])
 
   const finishWelcomeInstantly = () => {
@@ -148,6 +154,7 @@ export const TerminalWindow: React.FC = () => {
           startPacmanLoading(next)
         }, 55)
       } else {
+        // When 100% reached, pause briefly so user sees [ OK ] before terminal appears smoothly
         animTimerRef.current = setTimeout(() => {
           finishWelcomeInstantly()
         }, 380)
@@ -177,7 +184,7 @@ export const TerminalWindow: React.FC = () => {
     }
   }, [entries, typedCommand, streamedLineIndex, loadPercent, animPhase])
 
-  // Drag handlers using Pointer Events with Pointer Capture
+  // Drag handlers: Hardware-accelerated dragging with touch-action: none on header
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return
     if ((e.target as HTMLElement).closest('[data-no-drag]')) return
@@ -201,8 +208,9 @@ export const TerminalWindow: React.FC = () => {
     const deltaX = e.clientX - dragStartRef.current.startX
     const deltaY = e.clientY - dragStartRef.current.startY
 
-    const maxBoundX = window.innerWidth / 2 - 50
-    const maxBoundY = window.innerHeight / 2 - 50
+    // Safe bounds: ensure window cannot be lost completely off-screen
+    const maxBoundX = Math.max(25, (window.innerWidth - 80) / 2)
+    const maxBoundY = Math.max(25, (window.innerHeight - 80) / 2)
 
     const nextX = Math.max(-maxBoundX, Math.min(maxBoundX, dragStartRef.current.initX + deltaX))
     const nextY = Math.max(-maxBoundY, Math.min(maxBoundY, dragStartRef.current.initY + deltaY))
@@ -367,13 +375,13 @@ export const TerminalWindow: React.FC = () => {
         '--text-secondary': activeTheme.colors.textSecondary,
         '--term-border': '#30363D',
       } as React.CSSProperties}
-      className="relative min-h-screen w-full flex items-center justify-center p-2 sm:p-4 md:p-6 bg-[#0D1117] text-[#E6EDF3] overflow-hidden select-none"
+      className="relative min-h-[100dvh] w-full flex items-center justify-center p-1 sm:p-4 md:p-6 bg-[#0D1117] text-[#E6EDF3] overflow-hidden select-none"
     >
-      {/* Background center easter egg (revealed when user moves the terminal away from the center) */}
+      {/* Background center easter egg (revealed when user moves the terminal away from the center or minimizes) */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
         <div
           onClick={() => setIsCheered((prev) => !prev)}
-          className="pointer-events-auto font-mono text-xs cursor-pointer select-none flex items-center space-x-1.5 transition-all duration-200 hover:opacity-100 opacity-80"
+          className="pointer-events-auto font-mono text-xs cursor-pointer select-none flex items-center space-x-1.5 transition-all duration-200 hover:opacity-100 opacity-80 py-2 px-3"
           title="system message"
         >
           <span className="text-[#7EE787] font-bold select-none">~ $</span>
@@ -391,11 +399,11 @@ export const TerminalWindow: React.FC = () => {
             setIsMinimized(false)
             setTimeout(() => inputRef.current?.focus(), 150)
           }}
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-12 h-12 bg-[#161B22] border border-[#30363D] hover:border-[var(--prompt-green)] rounded-xl shadow-2xl cursor-pointer text-[var(--prompt-green)] transition-all duration-300 hover:scale-110 active:scale-95 flex items-center justify-center group"
+          className="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:bottom-6 left-1/2 -translate-x-1/2 z-50 w-11 h-11 sm:w-12 sm:h-12 bg-[#161B22] border border-[#30363D] hover:border-[var(--prompt-green)] rounded-xl shadow-2xl cursor-pointer text-[var(--prompt-green)] transition-all duration-300 hover:scale-110 active:scale-95 flex items-center justify-center group"
           title="Restore terminal"
           aria-label="Restore terminal"
         >
-          <CustomIcon className="w-6 h-6 transition-transform group-hover:scale-110" />
+          <CustomIcon className="w-5 h-5 sm:w-6 sm:h-6 transition-transform group-hover:scale-110" />
         </button>
       ) : (
         /* Main Terminal Window */
@@ -409,10 +417,10 @@ export const TerminalWindow: React.FC = () => {
               : 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), width 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease',
             willChange: 'transform',
           }}
-          className={`bg-[var(--term-surface)] border border-[#30363D] rounded-xl shadow-2xl flex flex-col overflow-hidden transition-colors duration-300 ${
+          className={`bg-[var(--term-surface)] border border-[#30363D] rounded-lg sm:rounded-xl shadow-2xl flex flex-col overflow-hidden transition-colors duration-300 ${
             isMaximized
-              ? 'fixed inset-2 md:inset-4 z-50 w-[calc(100vw-1rem)] md:w-[calc(100vw-2rem)] h-[calc(100vh-1rem)] md:h-[calc(100vh-2rem)]'
-              : 'w-full max-w-4xl h-[85vh] min-h-[550px]'
+              ? 'fixed inset-1 sm:inset-4 z-50 w-[calc(100vw-0.5rem)] sm:w-[calc(100vw-2rem)] h-[calc(100dvh-0.5rem)] sm:h-[calc(100dvh-2rem)]'
+              : 'w-full max-w-4xl h-[95dvh] sm:h-[85vh] min-h-[320px] sm:min-h-[460px]'
           }`}
           onClick={() => {
             if (animPhase !== 'done') {
@@ -422,63 +430,77 @@ export const TerminalWindow: React.FC = () => {
             }
           }}
         >
-          {/* Draggable Minimal Terminal Header */}
+          {/* Draggable Minimal Terminal Header with touchAction: none */}
           <header
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
             onDoubleClick={() => setIsMaximized((prev) => !prev)}
-            className={`flex items-center justify-between px-4 py-2.5 bg-[#161B22] border-b border-[#30363D] select-none shrink-0 ${
-              isMaximized ? 'cursor-default' : isDragging ? 'cursor-grabbing' : 'cursor-grab'
+            style={{ touchAction: 'none' }}
+            className={`flex items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5 bg-[#161B22] border-b border-[#30363D] select-none shrink-0 ${
+              isMaximized ? 'cursor-default' : isDragging ? 'cursor-grabbing' : 'sm:cursor-grab cursor-default'
             }`}
           >
-            {/* Control dots */}
-            <div data-no-drag className="flex items-center space-x-2">
-              <span
+            {/* Control dots with accessible touch targets */}
+            <div data-no-drag className="flex items-center space-x-1 sm:space-x-2">
+              <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation()
                   setEntries([])
                   finishWelcomeInstantly()
                 }}
-                className="w-3 h-3 rounded-full bg-[#FF5F56] hover:opacity-80 cursor-pointer inline-block transition-opacity"
+                className="p-1.5 -m-1 rounded-full focus:outline-none cursor-pointer flex items-center justify-center"
                 title="Reset terminal"
-              />
-              <span
+                aria-label="Reset terminal"
+              >
+                <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#FF5F56] hover:opacity-80 active:opacity-60 block transition-opacity" />
+              </button>
+              <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation()
                   setIsMinimized(true)
                 }}
-                className="w-3 h-3 rounded-full bg-[#FFBD2E] hover:opacity-80 cursor-pointer inline-block transition-opacity"
+                className="p-1.5 -m-1 rounded-full focus:outline-none cursor-pointer flex items-center justify-center"
                 title="Minimize window"
-              />
-              <span
+                aria-label="Minimize window"
+              >
+                <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#FFBD2E] hover:opacity-80 active:opacity-60 block transition-opacity" />
+              </button>
+              <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation()
                   setIsMaximized((prev) => !prev)
                 }}
-                className="w-3 h-3 rounded-full bg-[#27C93F] hover:opacity-80 cursor-pointer inline-block transition-opacity"
+                className="p-1.5 -m-1 rounded-full focus:outline-none cursor-pointer flex items-center justify-center"
                 title={isMaximized ? 'Restore window' : 'Maximize window'}
-              />
+                aria-label={isMaximized ? 'Restore window' : 'Maximize window'}
+              >
+                <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#27C93F] hover:opacity-80 active:opacity-60 block transition-opacity" />
+              </button>
             </div>
 
             {/* Title / Hostname */}
-            <div className="flex items-center space-x-1.5 text-xs text-[#8B949E] font-mono pointer-events-none">
-              <CustomIcon className="w-3.5 h-3.5 text-[var(--prompt-green)]" />
-              <span className="text-[#E6EDF3] font-medium">
+            <div className="flex items-center space-x-1 sm:space-x-1.5 text-[11px] sm:text-xs text-[#8B949E] font-mono pointer-events-none truncate max-w-[140px] xs:max-w-[200px] sm:max-w-none">
+              <CustomIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[var(--prompt-green)] shrink-0" />
+              <span className="text-[#E6EDF3] font-medium truncate">
                 sahid@portfolio:{vfsRef.current.getPromptPath()}
               </span>
             </div>
 
             {/* Right actions: Minimize & Maximize controls */}
-            <div data-no-drag className="flex items-center space-x-1">
+            <div data-no-drag className="flex items-center space-x-0.5 sm:space-x-1">
               <button
                 onClick={(e) => {
                   e.stopPropagation()
                   setIsMinimized(true)
                 }}
-                className="p-1 rounded text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#21262D]/40 transition-colors"
+                className="p-1.5 sm:p-1 rounded text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#21262D]/40 active:bg-[#21262D] transition-colors"
                 title="Minimize"
+                aria-label="Minimize"
               >
                 <Minus className="w-3.5 h-3.5" />
               </button>
@@ -487,10 +509,15 @@ export const TerminalWindow: React.FC = () => {
                   e.stopPropagation()
                   setIsMaximized((prev) => !prev)
                 }}
-                className="p-1 rounded text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#21262D]/40 transition-colors"
+                className="p-1.5 sm:p-1 rounded text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#21262D]/40 active:bg-[#21262D] transition-colors"
                 title={isMaximized ? 'Restore Window' : 'Maximize Window'}
+                aria-label={isMaximized ? 'Restore Window' : 'Maximize Window'}
               >
-                {isMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                {isMaximized ? (
+                  <Minimize2 className="w-3.5 h-3.5" />
+                ) : (
+                  <Maximize2 className="w-3.5 h-3.5" />
+                )}
               </button>
             </div>
           </header>
@@ -498,29 +525,29 @@ export const TerminalWindow: React.FC = () => {
           {/* Pure Terminal Stream */}
           <div
             ref={terminalBodyRef}
-            className="flex-1 p-4 md:p-6 overflow-y-auto font-mono text-sm leading-relaxed select-text bg-[var(--term-surface)] text-[var(--text-primary)] transition-colors duration-300"
+            className="flex-1 p-3 sm:p-5 md:p-6 overflow-y-auto font-mono text-xs sm:text-sm leading-relaxed select-text bg-[var(--term-surface)] text-[var(--text-primary)] transition-colors duration-300"
           >
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {/* Standard Terminal Entries */}
               <TerminalOutput entries={entries} />
 
               {/* Step 1: Slower typing animation */}
               {animPhase === 'typing' && (
-                <div className="flex items-center space-x-2 font-mono text-sm">
+                <div className="flex flex-wrap sm:flex-nowrap items-baseline gap-x-2 gap-y-1 font-mono text-xs sm:text-sm">
                   <span className="text-[var(--prompt-green)] font-bold select-none shrink-0">
                     sahid@portfolio:~$
                   </span>
                   <span className="text-[var(--command-cyan)] font-semibold flex items-center">
                     <span>{typedCommand}</span>
-                    <span className="inline-block w-[8.5px] h-[1.15em] bg-[var(--prompt-green)] cursor-blink align-text-bottom select-none ml-[1px]" />
+                    <span className="inline-block w-[7px] sm:w-[8.5px] h-[1.15em] bg-[var(--prompt-green)] cursor-blink align-text-bottom select-none ml-[1px]" />
                   </span>
                 </div>
               )}
 
               {/* Step 2: Streaming welcome output */}
               {(animPhase === 'streaming' || animPhase === 'loading-bar') && (
-                <div className="space-y-3 font-mono text-sm">
-                  <div className="flex items-center space-x-2">
+                <div className="space-y-3 font-mono text-xs sm:text-sm">
+                  <div className="flex flex-wrap sm:flex-nowrap items-baseline gap-x-2 gap-y-1">
                     <span className="text-[var(--prompt-green)] font-bold select-none shrink-0">
                       sahid@portfolio:~$
                     </span>
@@ -541,7 +568,7 @@ export const TerminalWindow: React.FC = () => {
 
               {/* Step 3: Arch Linux Pacman ILoveCandy Loading Animation across window width */}
               {animPhase === 'loading-bar' && (
-                <div className="pt-2 font-mono text-xs sm:text-sm whitespace-pre flex items-center overflow-x-hidden">
+                <div className="pt-2 font-mono text-[11px] sm:text-sm whitespace-pre flex items-center overflow-x-hidden">
                   <span className="text-[var(--prompt-green)] font-bold">[</span>
                   {loadPercent < 100 ? (
                     <>
@@ -553,11 +580,11 @@ export const TerminalWindow: React.FC = () => {
                     <span className="text-[var(--prompt-green)] font-bold">{'-'.repeat(barLength)}</span>
                   )}
                   <span className="text-[var(--prompt-green)] font-bold">]</span>
-                  <span className="text-[var(--command-cyan)] font-bold ml-2.5">
+                  <span className="text-[var(--command-cyan)] font-bold ml-1.5 sm:ml-2.5">
                     {String(loadPercent).padStart(3, ' ')}%
                   </span>
                   {loadPercent === 100 && (
-                    <span className="text-[var(--prompt-green)] font-bold ml-2">[ OK ]</span>
+                    <span className="text-[var(--prompt-green)] font-bold ml-1.5 sm:ml-2">[ OK ]</span>
                   )}
                 </div>
               )}
