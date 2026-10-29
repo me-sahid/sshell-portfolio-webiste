@@ -294,20 +294,19 @@ export const TerminalWindow: React.FC = () => {
 
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center p-2 sm:p-4 md:p-6 bg-[#0D1117] overflow-hidden select-none">
-      {/* Minimized Docked Pill */}
+      {/* Minimized Docked Icon Only */}
       {isMinimized ? (
-        <div
+        <button
           onClick={() => {
             setIsMinimized(false)
             setTimeout(() => inputRef.current?.focus(), 150)
           }}
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center space-x-2.5 px-4 py-2 bg-[#161B22] border border-[#30363D] hover:border-[#7EE787] rounded-full shadow-2xl cursor-pointer text-xs font-mono text-[#E6EDF3] transition-all duration-300 hover:scale-105 active:scale-95"
-          title="Click to restore terminal"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-12 h-12 bg-[#161B22] border border-[#30363D] hover:border-[#7EE787] rounded-xl shadow-2xl cursor-pointer text-[#7EE787] transition-all duration-300 hover:scale-110 active:scale-95 flex items-center justify-center group"
+          title="Restore terminal"
+          aria-label="Restore terminal"
         >
-          <CustomIcon className="w-4 h-4 text-[#7EE787]" />
-          <span>sahid@portfolio:~</span>
-          <span className="w-2 h-2 rounded-full bg-[#7EE787] animate-pulse ml-1" />
-        </div>
+          <CustomIcon className="w-6 h-6 transition-transform group-hover:scale-110" />
+        </button>
       ) : (
         /* Main Terminal Window */
         <main
