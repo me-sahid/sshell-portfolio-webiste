@@ -358,22 +358,22 @@ export const TerminalWindow: React.FC = () => {
   return (
     <div
       style={{
-        '--bg-main': activeTheme.colors.bgMain,
+        '--bg-main': '#0D1117',
         '--term-surface': activeTheme.colors.termSurface,
-        '--term-header': activeTheme.colors.termHeader,
+        '--term-header': '#161B22',
         '--prompt-green': activeTheme.colors.promptGreen,
         '--command-cyan': activeTheme.colors.commandCyan,
         '--text-primary': activeTheme.colors.textPrimary,
         '--text-secondary': activeTheme.colors.textSecondary,
-        '--term-border': activeTheme.colors.termBorder,
+        '--term-border': '#30363D',
       } as React.CSSProperties}
-      className="relative min-h-screen w-full flex items-center justify-center p-2 sm:p-4 md:p-6 bg-[var(--bg-main)] text-[var(--text-primary)] overflow-hidden select-none transition-colors duration-300"
+      className="relative min-h-screen w-full flex items-center justify-center p-2 sm:p-4 md:p-6 bg-[#0D1117] text-[#E6EDF3] overflow-hidden select-none"
     >
       {/* Background center easter egg (revealed when user moves the terminal away from the center) */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
         <span
           onClick={() => setIsCheered((prev) => !prev)}
-          className="pointer-events-auto text-xs font-mono text-[var(--text-secondary)] hover:text-[var(--prompt-green)] cursor-pointer transition-colors duration-200 select-none"
+          className="pointer-events-auto text-xs font-mono text-[#8B949E] hover:text-[#7EE787] cursor-pointer transition-colors duration-200 select-none"
           title="Click me"
         >
           {isCheered ? 'you are doing better, keep up ;3' : 'hey ;)'}
@@ -387,7 +387,7 @@ export const TerminalWindow: React.FC = () => {
             setIsMinimized(false)
             setTimeout(() => inputRef.current?.focus(), 150)
           }}
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-12 h-12 bg-[var(--term-header)] border border-[var(--term-border)] hover:border-[var(--prompt-green)] rounded-xl shadow-2xl cursor-pointer text-[var(--prompt-green)] transition-all duration-300 hover:scale-110 active:scale-95 flex items-center justify-center group"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-12 h-12 bg-[#161B22] border border-[#30363D] hover:border-[var(--prompt-green)] rounded-xl shadow-2xl cursor-pointer text-[var(--prompt-green)] transition-all duration-300 hover:scale-110 active:scale-95 flex items-center justify-center group"
           title="Restore terminal"
           aria-label="Restore terminal"
         >
@@ -402,10 +402,10 @@ export const TerminalWindow: React.FC = () => {
               : `translate3d(${dragPos.x}px, ${dragPos.y}px, 0)`,
             transition: isDragging
               ? 'none'
-              : 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), width 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease, border-color 0.3s ease',
+              : 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), width 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease',
             willChange: 'transform',
           }}
-          className={`bg-[var(--term-surface)] border border-[var(--term-border)] rounded-xl shadow-2xl flex flex-col overflow-hidden transition-colors duration-300 ${
+          className={`bg-[var(--term-surface)] border border-[#30363D] rounded-xl shadow-2xl flex flex-col overflow-hidden transition-colors duration-300 ${
             isMaximized
               ? 'fixed inset-2 md:inset-4 z-50 w-[calc(100vw-1rem)] md:w-[calc(100vw-2rem)] h-[calc(100vh-1rem)] md:h-[calc(100vh-2rem)]'
               : 'w-full max-w-4xl h-[85vh] min-h-[550px]'
@@ -425,7 +425,7 @@ export const TerminalWindow: React.FC = () => {
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
             onDoubleClick={() => setIsMaximized((prev) => !prev)}
-            className={`flex items-center justify-between px-4 py-2.5 bg-[var(--term-header)] border-b border-[var(--term-border)] select-none shrink-0 transition-colors duration-300 ${
+            className={`flex items-center justify-between px-4 py-2.5 bg-[#161B22] border-b border-[#30363D] select-none shrink-0 ${
               isMaximized ? 'cursor-default' : isDragging ? 'cursor-grabbing' : 'cursor-grab'
             }`}
           >
@@ -459,9 +459,9 @@ export const TerminalWindow: React.FC = () => {
             </div>
 
             {/* Title / Hostname */}
-            <div className="flex items-center space-x-1.5 text-xs text-[var(--text-secondary)] font-mono pointer-events-none">
+            <div className="flex items-center space-x-1.5 text-xs text-[#8B949E] font-mono pointer-events-none">
               <CustomIcon className="w-3.5 h-3.5 text-[var(--prompt-green)]" />
-              <span className="text-[var(--text-primary)] font-medium">
+              <span className="text-[#E6EDF3] font-medium">
                 sahid@portfolio:{vfsRef.current.getPromptPath()}
               </span>
             </div>
@@ -473,7 +473,7 @@ export const TerminalWindow: React.FC = () => {
                   e.stopPropagation()
                   setIsMinimized(true)
                 }}
-                className="p-1 rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[#21262D]/30 transition-colors"
+                className="p-1 rounded text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#21262D]/40 transition-colors"
                 title="Minimize"
               >
                 <Minus className="w-3.5 h-3.5" />
@@ -483,7 +483,7 @@ export const TerminalWindow: React.FC = () => {
                   e.stopPropagation()
                   setIsMaximized((prev) => !prev)
                 }}
-                className="p-1 rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[#21262D]/30 transition-colors"
+                className="p-1 rounded text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#21262D]/40 transition-colors"
                 title={isMaximized ? 'Restore Window' : 'Maximize Window'}
               >
                 {isMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
@@ -494,7 +494,7 @@ export const TerminalWindow: React.FC = () => {
           {/* Pure Terminal Stream */}
           <div
             ref={terminalBodyRef}
-            className="flex-1 p-4 md:p-6 overflow-y-auto font-mono text-sm leading-relaxed select-text"
+            className="flex-1 p-4 md:p-6 overflow-y-auto font-mono text-sm leading-relaxed select-text bg-[var(--term-surface)] text-[var(--text-primary)] transition-colors duration-300"
           >
             <div className="space-y-4">
               {/* Standard Terminal Entries */}
