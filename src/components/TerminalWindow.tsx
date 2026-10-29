@@ -57,18 +57,18 @@ export const TerminalWindow: React.FC = () => {
     const targetCommand = 'welcome'
     let charIdx = 0
 
-    // Step 1: Realistic typing keystroke by keystroke
+    // Step 1: Realistic typing keystroke by keystroke (fast and snappy)
     const typeNextChar = () => {
       if (charIdx < targetCommand.length) {
         charIdx++
         setTypedCommand(targetCommand.slice(0, charIdx))
-        animTimerRef.current = setTimeout(typeNextChar, 95)
+        animTimerRef.current = setTimeout(typeNextChar, 55)
       } else {
-        // Pause briefly after typing before executing
+        // Quick natural pause after typing before executing
         animTimerRef.current = setTimeout(() => {
           setAnimPhase('streaming')
           streamNextLine(0)
-        }, 320)
+        }, 180)
       }
     }
 
@@ -76,19 +76,19 @@ export const TerminalWindow: React.FC = () => {
     const streamNextLine = (lineIdx: number) => {
       if (lineIdx < welcomeLines.current.length) {
         setStreamedLineIndex(lineIdx + 1)
-        // Authentic terminal stdout timing (60-80ms per line)
+        // Snappy terminal stdout stream
         animTimerRef.current = setTimeout(() => {
           streamNextLine(lineIdx + 1)
-        }, 75)
+        }, 42)
       } else {
         animTimerRef.current = setTimeout(() => {
           finishWelcomeInstantly()
-        }, 200)
+        }, 100)
       }
     }
 
     // Initial slight pause before typing starts
-    animTimerRef.current = setTimeout(typeNextChar, 250)
+    animTimerRef.current = setTimeout(typeNextChar, 150)
 
     const handleSkip = () => {
       finishWelcomeInstantly()
