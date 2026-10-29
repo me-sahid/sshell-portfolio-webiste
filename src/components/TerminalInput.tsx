@@ -120,7 +120,8 @@ export const TerminalInput: React.FC<TerminalInputProps> = ({
   }
 
   const beforeCursor = value.slice(0, cursorPos)
-  const afterCursor = value.slice(cursorPos)
+  const charAtCursor = value[cursorPos]
+  const afterCursor = value.slice(cursorPos + 1)
 
   return (
     <div className="mt-2 font-mono text-sm">
@@ -156,13 +157,17 @@ export const TerminalInput: React.FC<TerminalInputProps> = ({
         </span>
 
         <div className="relative flex-1 flex items-center min-h-[1.5rem]">
-          {/* Visual text with authentic underline text blinker */}
-          <div className="font-mono text-sm pointer-events-none select-none flex items-center whitespace-pre">
+          {/* Visual text with bold fat VS Code style block blinker */}
+          <div className="font-mono text-sm pointer-events-none select-none flex items-center whitespace-pre leading-none">
             <span className="text-[#E6EDF3]">{beforeCursor}</span>
             {isFocused && (
-              <span className="text-[#7EE787] font-bold cursor-blink select-none">
-                _
-              </span>
+              charAtCursor !== undefined ? (
+                <span className="bg-[#7EE787] text-[#15181E] font-bold cursor-blink inline-block px-[0.5px]">
+                  {charAtCursor}
+                </span>
+              ) : (
+                <span className="inline-block w-[8.5px] h-[1.15em] bg-[#7EE787] cursor-blink align-text-bottom select-none" />
+              )
             )}
             <span className="text-[#E6EDF3]">{afterCursor}</span>
           </div>

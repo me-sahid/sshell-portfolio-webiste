@@ -15,24 +15,27 @@ export const TerminalWindow: React.FC = () => {
   const [isLocked, setIsLocked] = useState<boolean>(false)
   const [isMaximized, setIsMaximized] = useState<boolean>(false)
 
-  // Shell typing animation state on reload
-  const [isTypingWelcome, setIsTypingWelcome] = useState<boolean>(true)
+  // Animation states: 'typing' -> 'streaming' -> 'done'
+  const [animPhase, setAnimPhase] = useState<'typing' | 'streaming' | 'done'>('typing')
   const [typedCommand, setTypedCommand] = useState<string>('')
+  const [streamedLineIndex, setStreamedLineIndex] = useState<number>(0)
 
   const vfsRef = useRef<VirtualFileSystem>(new VirtualFileSystem())
   const registryRef = useRef<CommandRegistry>(new CommandRegistry())
   const terminalBodyRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const animTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const finishWelcome = () => {
-    if (typingTimerRef.current) {
-      clearTimeout(typingTimerRef.current)
+  const welcomeLines = useRef<string[]>(WELCOME_TEXT.split('\n'))
+
+  const finishWelcomeInstantly = () => {
+    if (animTimerRef.current) {
+      clearTimeout(animTimerRef.current)
     }
-    setIsTypingWelcome(false)
+    setAnimPhase('done')
     setEntries([
       {
-        id: 'welcome-input',
+        id: 'welcome-cmd',
         type: 'input',
         command: 'welcome',
         cwd: '~',
@@ -40,7 +43,7 @@ export const TerminalWindow: React.FC = () => {
         timestamp: Date.now() - 100,
       },
       {
-        id: 'welcome-output',
+        id: 'welcome-out',
         type: 'output',
         content: WELCOME_TEXT,
         timestamp: Date.now(),
@@ -49,46 +52,63 @@ export const TerminalWindow: React.FC = () => {
     setTimeout(() => inputRef.current?.focus(), 50)
   }
 
-  // Reload typing animation
+  // Sequential boot typing and apt-get update style line streaming
   useEffect(() => {
-    const target = 'welcome'
-    let currentIdx = 0
+    const targetCommand = 'welcome'
+    let charIdx = 0
 
+    // Step 1: Realistic typing keystroke by keystroke
     const typeNextChar = () => {
-      if (currentIdx < target.length) {
-        currentIdx++
-        setTypedCommand(target.slice(0, currentIdx))
-        typingTimerRef.current = setTimeout(typeNextChar, 75)
+      if (charIdx < targetCommand.length) {
+        charIdx++
+        setTypedCommand(targetCommand.slice(0, charIdx))
+        animTimerRef.current = setTimeout(typeNextChar, 95)
       } else {
-        // Pausing briefly to simulate pressing Enter
-        typingTimerRef.current = setTimeout(() => {
-          finishWelcome()
-        }, 220)
+        // Pause briefly after typing before executing
+        animTimerRef.current = setTimeout(() => {
+          setAnimPhase('streaming')
+          streamNextLine(0)
+        }, 320)
       }
     }
 
-    // Initial brief delay before typing begins
-    typingTimerRef.current = setTimeout(typeNextChar, 250)
+    // Step 2: Line by line output stream like system booting / apt-get update
+    const streamNextLine = (lineIdx: number) => {
+      if (lineIdx < welcomeLines.current.length) {
+        setStreamedLineIndex(lineIdx + 1)
+        // Authentic terminal stdout timing (60-80ms per line)
+        animTimerRef.current = setTimeout(() => {
+          streamNextLine(lineIdx + 1)
+        }, 75)
+      } else {
+        animTimerRef.current = setTimeout(() => {
+          finishWelcomeInstantly()
+        }, 200)
+      }
+    }
+
+    // Initial slight pause before typing starts
+    animTimerRef.current = setTimeout(typeNextChar, 250)
 
     const handleSkip = () => {
-      finishWelcome()
+      finishWelcomeInstantly()
     }
 
     window.addEventListener('keydown', handleSkip, { once: true })
     return () => {
-      if (typingTimerRef.current) {
-        clearTimeout(typingTimerRef.current)
+      if (animTimerRef.current) {
+        clearTimeout(animTimerRef.current)
       }
       window.removeEventListener('keydown', handleSkip)
     }
   }, [])
 
-  // Auto-scroll to bottom
+  // Auto-scroll on any change during typing or streaming
   useEffect(() => {
     if (terminalBodyRef.current) {
       terminalBodyRef.current.scrollTop = terminalBodyRef.current.scrollHeight
     }
-  }, [entries, typedCommand, isTypingWelcome])
+  }, [entries, typedCommand, streamedLineIndex, animPhase])
 
   const handleCommandSubmit = (commandLine: string) => {
     const trimmed = commandLine.trim()
@@ -185,6 +205,10 @@ export const TerminalWindow: React.FC = () => {
     return { completed: currentInput }
   }
 
+  const currentlyStreamedText = welcomeLines.current
+    .slice(0, streamedLineIndex)
+    .join('\n')
+
   return (
     <div className="min-h-screen flex items-center justify-center p-2 sm:p-4 md:p-6 bg-[#0D1117]">
       <main
@@ -192,8 +216,8 @@ export const TerminalWindow: React.FC = () => {
           isMaximized ? 'fixed inset-2 z-50 h-[calc(100vh-1rem)]' : 'max-w-4xl h-[85vh] min-h-[550px]'
         }`}
         onClick={() => {
-          if (isTypingWelcome) {
-            finishWelcome()
+          if (animPhase !== 'done') {
+            finishWelcomeInstantly()
           } else {
             inputRef.current?.focus()
           }
@@ -205,7 +229,7 @@ export const TerminalWindow: React.FC = () => {
             <span
               onClick={() => {
                 setEntries([])
-                finishWelcome()
+                finishWelcomeInstantly()
               }}
               className="w-3 h-3 rounded-full bg-[#FF5F56] hover:opacity-80 cursor-pointer inline-block"
               title="Reset terminal"
@@ -249,20 +273,47 @@ export const TerminalWindow: React.FC = () => {
           className="flex-1 p-4 md:p-6 overflow-y-auto font-mono text-sm leading-relaxed"
         >
           <div className="space-y-4">
+            {/* Standard Terminal Entries */}
             <TerminalOutput entries={entries} />
 
-            {/* Simulated typing on reload */}
-            {isTypingWelcome ? (
+            {/* In-progress typing & streaming animation */}
+            {animPhase === 'typing' && (
               <div className="flex items-center space-x-2 font-mono text-sm">
                 <span className="text-[#7EE787] font-bold select-none shrink-0">
                   sahid@portfolio:~$
                 </span>
                 <span className="text-[#79C0FF] font-semibold flex items-center">
                   <span>{typedCommand}</span>
-                  <span className="text-[#7EE787] font-bold cursor-blink select-none ml-0.5">_</span>
+                  {/* VS Code bold fat block cursor moving right with typing */}
+                  <span className="inline-block w-[8.5px] h-[1.15em] bg-[#7EE787] cursor-blink align-text-bottom select-none ml-[1px]" />
                 </span>
               </div>
-            ) : (
+            )}
+
+            {animPhase === 'streaming' && (
+              <div className="space-y-3 font-mono text-sm">
+                <div className="flex items-center space-x-2">
+                  <span className="text-[#7EE787] font-bold select-none shrink-0">
+                    sahid@portfolio:~$
+                  </span>
+                  <span className="text-[#79C0FF] font-semibold">welcome</span>
+                </div>
+                {/* Lines streaming in sequentially like apt-get update */}
+                <TerminalOutput
+                  entries={[
+                    {
+                      id: 'streaming-preview',
+                      type: 'output',
+                      content: currentlyStreamedText,
+                      timestamp: Date.now(),
+                    },
+                  ]}
+                />
+              </div>
+            )}
+
+            {/* Live Interactive Command Prompt */}
+            {animPhase === 'done' && (
               <TerminalInput
                 inputRef={inputRef}
                 promptPath={vfsRef.current.getPromptPath()}
