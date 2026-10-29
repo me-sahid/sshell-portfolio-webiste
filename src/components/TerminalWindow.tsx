@@ -6,7 +6,8 @@ import type { TerminalEntry } from '../data/types'
 import { PROJECTS, WELCOME_TEXT } from '../data/portfolioData'
 import { TerminalInput } from './TerminalInput'
 import { TerminalOutput } from './TerminalOutput'
-import { Terminal, Maximize2, Minimize2 } from 'lucide-react'
+import { CustomIcon } from './CustomIcon'
+import { Maximize2, Minimize2 } from 'lucide-react'
 
 export const TerminalWindow: React.FC = () => {
   const [entries, setEntries] = useState<TerminalEntry[]>([])
@@ -222,7 +223,7 @@ export const TerminalWindow: React.FC = () => {
           </div>
 
           <div className="flex items-center space-x-1.5 text-xs text-[#8B949E] font-mono">
-            <Terminal className="w-3.5 h-3.5 text-[#7EE787]" />
+            <CustomIcon className="w-3.5 h-3.5 text-[#7EE787]" />
             <span className="text-[#E6EDF3] font-medium">
               sahid@portfolio:{vfsRef.current.getPromptPath()}
             </span>
