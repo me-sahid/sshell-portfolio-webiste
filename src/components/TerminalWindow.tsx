@@ -20,6 +20,9 @@ export const TerminalWindow: React.FC = () => {
   const [dragPos, setDragPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState<boolean>(false)
 
+  // Dynamic window width measurement for Pacman bar
+  const [barLength, setBarLength] = useState<number>(50)
+
   // Drag tracking refs
   const dragStartRef = useRef<{ startX: number; startY: number; initX: number; initY: number }>({
     startX: 0,
@@ -33,6 +36,7 @@ export const TerminalWindow: React.FC = () => {
   const [typedCommand, setTypedCommand] = useState<string>('')
   const [streamedLineIndex, setStreamedLineIndex] = useState<number>(0)
   const [loadPercent, setLoadPercent] = useState<number>(0)
+  const [chompState, setChompState] = useState<boolean>(true)
 
   const vfsRef = useRef<VirtualFileSystem>(new VirtualFileSystem())
   const registryRef = useRef<CommandRegistry>(new CommandRegistry())
@@ -42,11 +46,28 @@ export const TerminalWindow: React.FC = () => {
 
   const welcomeLines = useRef<string[]>(WELCOME_TEXT.split('\n'))
 
+  // Measure container width to dynamically size the Pacman bar across the entire window
+  useEffect(() => {
+    const updateBarSize = () => {
+      if (terminalBodyRef.current) {
+        const containerWidth = terminalBodyRef.current.clientWidth
+        // Each monospace char ~8.4px, subtract ~140px for margins, brackets & percentage
+        const availableChars = Math.floor((containerWidth - 140) / 8.5)
+        setBarLength(Math.max(16, Math.min(85, availableChars)))
+      }
+    }
+
+    updateBarSize()
+    window.addEventListener('resize', updateBarSize)
+    return () => window.removeEventListener('resize', updateBarSize)
+  }, [isMaximized])
+
   const finishWelcomeInstantly = () => {
     if (animTimerRef.current) {
       clearTimeout(animTimerRef.current)
     }
     setAnimPhase('done')
+    const completedDashes = '-'.repeat(barLength)
     setEntries([
       {
         id: 'welcome-cmd',
@@ -63,13 +84,13 @@ export const TerminalWindow: React.FC = () => {
         timestamp: Date.now() - 100,
       },
       {
-        id: 'welcome-loader',
+        id: 'welcome-pacman-loader',
         type: 'output',
-        content: 'Loading interactive shell: [██████████████████████████████] 100% [ OK ]',
+        content: `[${completedDashes}]  100%  [ OK ]`,
         timestamp: Date.now(),
       },
     ])
-    setTimeout(() => inputRef.current?.focus(), 60)
+    setTimeout(() => inputRef.current?.focus(), 80)
   }
 
   // Animation sequence on reload
@@ -77,55 +98,58 @@ export const TerminalWindow: React.FC = () => {
     const targetCommand = 'welcome'
     let charIdx = 0
 
-    // Step 1: Deliberate, slower typing keystroke by keystroke (~115ms)
+    // Step 1: Slower, deliberate intro typing (~135ms per keystroke)
     const typeNextChar = () => {
       if (charIdx < targetCommand.length) {
         charIdx++
         setTypedCommand(targetCommand.slice(0, charIdx))
-        animTimerRef.current = setTimeout(typeNextChar, 115)
+        animTimerRef.current = setTimeout(typeNextChar, 135)
       } else {
         // Natural pause after typing finishes before execution
         animTimerRef.current = setTimeout(() => {
           setAnimPhase('streaming')
           streamNextLine(0)
-        }, 300)
+        }, 350)
       }
     }
 
-    // Step 2: Line by line welcome output stream
+    // Step 2: Slower line-by-line welcome output stream (~65ms per line)
     const streamNextLine = (lineIdx: number) => {
       if (lineIdx < welcomeLines.current.length) {
         setStreamedLineIndex(lineIdx + 1)
         animTimerRef.current = setTimeout(() => {
           streamNextLine(lineIdx + 1)
-        }, 45)
+        }, 65)
       } else {
-        // Pause after text output before Linux loading bar begins
+        // Pause after text stream before Pacman loader begins
         animTimerRef.current = setTimeout(() => {
           setAnimPhase('loading-bar')
-          startLoadingBar(0)
-        }, 220)
-      }
-    }
-
-    // Step 3: Linux-style progress bar animation (~1.3s total)
-    const startLoadingBar = (progress: number) => {
-      if (progress < 100) {
-        const next = Math.min(100, progress + Math.floor(Math.random() * 8) + 4)
-        setLoadPercent(next)
-        animTimerRef.current = setTimeout(() => {
-          startLoadingBar(next)
-        }, 45)
-      } else {
-        // Pause briefly at 100% before the user shell prompt appears
-        animTimerRef.current = setTimeout(() => {
-          finishWelcomeInstantly()
+          startPacmanLoading(0)
         }, 300)
       }
     }
 
+    // Step 3: Arch Linux Pacman ILoveCandy style loading animation
+    const startPacmanLoading = (progress: number) => {
+      if (progress < 100) {
+        const step = Math.floor(Math.random() * 4) + 2
+        const next = Math.min(100, progress + step)
+        setLoadPercent(next)
+        setChompState((prev) => !prev)
+
+        animTimerRef.current = setTimeout(() => {
+          startPacmanLoading(next)
+        }, 55)
+      } else {
+        // When 100% reached, pause briefly so the user sees [ OK ] before the terminal appears slowly
+        animTimerRef.current = setTimeout(() => {
+          finishWelcomeInstantly()
+        }, 380)
+      }
+    }
+
     // Initial slight pause before typing starts
-    animTimerRef.current = setTimeout(typeNextChar, 200)
+    animTimerRef.current = setTimeout(typeNextChar, 250)
 
     const handleSkip = () => {
       finishWelcomeInstantly()
@@ -138,7 +162,7 @@ export const TerminalWindow: React.FC = () => {
       }
       window.removeEventListener('keydown', handleSkip)
     }
-  }, [])
+  }, [barLength])
 
   // Auto-scroll on any change during typing, streaming, or loading
   useEffect(() => {
@@ -289,8 +313,20 @@ export const TerminalWindow: React.FC = () => {
     .slice(0, streamedLineIndex)
     .join('\n')
 
-  const totalBarBlocks = 30
-  const filledBlocks = Math.round((loadPercent / 100) * totalBarBlocks)
+  // Generate Arch Linux Pacman ILoveCandy progress bar representation
+  const pacmanPos = Math.floor((loadPercent / 100) * barLength)
+  const eatenDashes = '-'.repeat(Math.max(0, pacmanPos))
+  const pacmanChar = chompState ? 'C' : 'c'
+
+  // Food pellets ahead of Pacman
+  let pelletsAhead = ''
+  for (let i = pacmanPos + 1; i < barLength; i++) {
+    if (i % 4 === 0) {
+      pelletsAhead += 'o'
+    } else {
+      pelletsAhead += ' '
+    }
+  }
 
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center p-2 sm:p-4 md:p-6 bg-[#0D1117] overflow-hidden select-none">
@@ -449,40 +485,41 @@ export const TerminalWindow: React.FC = () => {
                 </div>
               )}
 
-              {/* Step 3: Linux-style progress loading bar before prompt appears */}
+              {/* Step 3: Arch Linux Pacman ILoveCandy Loading Animation across window width */}
               {animPhase === 'loading-bar' && (
-                <div className="pt-2 font-mono text-xs sm:text-sm space-y-1">
-                  <div className="flex items-center space-x-2 text-[#8B949E]">
-                    <span className="text-[#7EE787] font-bold">system:</span>
-                    <span>loading interactive shell environment...</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-[#7EE787] font-bold">[</span>
-                    <span className="text-[#7EE787] tracking-tighter">
-                      {'█'.repeat(filledBlocks)}
-                    </span>
-                    <span className="text-[#30363D] tracking-tighter">
-                      {'░'.repeat(Math.max(0, totalBarBlocks - filledBlocks))}
-                    </span>
-                    <span className="text-[#7EE787] font-bold">]</span>
-                    <span className="text-[#79C0FF] font-bold w-12">{loadPercent}%</span>
-                    {loadPercent === 100 && (
-                      <span className="text-[#7EE787] font-bold">[ OK ]</span>
-                    )}
-                  </div>
+                <div className="pt-2 font-mono text-xs sm:text-sm whitespace-pre flex items-center overflow-x-hidden">
+                  <span className="text-[#7EE787] font-bold">[</span>
+                  {loadPercent < 100 ? (
+                    <>
+                      <span className="text-[#7EE787] font-bold">{eatenDashes}</span>
+                      <span className="text-[#F2CC60] font-bold">{pacmanChar}</span>
+                      <span className="text-[#8B949E] tracking-wider">{pelletsAhead}</span>
+                    </>
+                  ) : (
+                    <span className="text-[#7EE787] font-bold">{'-'.repeat(barLength)}</span>
+                  )}
+                  <span className="text-[#7EE787] font-bold">]</span>
+                  <span className="text-[#7EE787] font-bold ml-2.5">
+                    {String(loadPercent).padStart(3, ' ')}%
+                  </span>
+                  {loadPercent === 100 && (
+                    <span className="text-[#7EE787] font-bold ml-2">[ OK ]</span>
+                  )}
                 </div>
               )}
 
-              {/* Step 4: Shell terminal prompt where user inputs appears after loading bar */}
+              {/* Step 4: Shell terminal prompt appears smoothly/slowly */}
               {animPhase === 'done' && (
-                <TerminalInput
-                  inputRef={inputRef}
-                  promptPath={vfsRef.current.getPromptPath()}
-                  onSubmit={handleCommandSubmit}
-                  onTabComplete={handleTabComplete}
-                  history={history}
-                  isLocked={isLocked}
-                />
+                <div className="animate-fade-slow">
+                  <TerminalInput
+                    inputRef={inputRef}
+                    promptPath={vfsRef.current.getPromptPath()}
+                    onSubmit={handleCommandSubmit}
+                    onTabComplete={handleTabComplete}
+                    history={history}
+                    isLocked={isLocked}
+                  />
+                </div>
               )}
             </div>
           </div>
