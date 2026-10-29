@@ -19,6 +19,7 @@ export const TerminalWindow: React.FC = () => {
   const [isMinimized, setIsMinimized] = useState<boolean>(false)
   const [dragPos, setDragPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState<boolean>(false)
+  const [isCheered, setIsCheered] = useState<boolean>(false)
 
   // Dynamic window width measurement for Pacman bar
   const [barLength, setBarLength] = useState<number>(50)
@@ -330,6 +331,21 @@ export const TerminalWindow: React.FC = () => {
 
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center p-2 sm:p-4 md:p-6 bg-[#0D1117] overflow-hidden select-none">
+      {/* Background center easter egg (revealed when the user moves the terminal away from the center) */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            setIsCheered((prev) => !prev)
+          }}
+          className="pointer-events-auto text-xs font-mono text-[#8B949E] hover:text-[#7EE787] px-3.5 py-1.5 rounded-full border border-[#30363D]/60 hover:border-[#7EE787]/50 bg-[#161B22]/60 backdrop-blur-sm transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg"
+          title="Click me"
+        >
+          {isCheered ? 'you are doing better, keep up ;3' : 'hey ;)'}
+        </button>
+      </div>
+
       {/* Minimized Docked Icon Only */}
       {isMinimized ? (
         <button
@@ -344,7 +360,33 @@ export const TerminalWindow: React.FC = () => {
           <CustomIcon className="w-6 h-6 transition-transform group-hover:scale-110" />
         </button>
       ) : (
-        /* Main Terminal Window */
+        <>
+          {/* Floating beside the terminal on wider screens */}
+          {!isMaximized && (
+            <aside
+              aria-label="Easter egg note"
+              style={{
+                transform: `translate3d(${dragPos.x + 470}px, ${dragPos.y - 180}px, 0)`,
+                transition: isDragging
+                  ? 'none'
+                  : 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+              }}
+              className="absolute hidden 2xl:block pointer-events-auto z-10"
+            >
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIsCheered((prev) => !prev)
+                }}
+                className="text-xs font-mono text-[#8B949E] hover:text-[#7EE787] px-2.5 py-1 rounded-md border border-[#30363D]/50 bg-[#161B22]/70 hover:border-[#7EE787]/50 backdrop-blur-sm transition-all duration-300 hover:scale-105 active:scale-95 shadow-md"
+              >
+                {isCheered ? 'you are doing better, keep up ;3' : 'hey ;)'}
+              </button>
+            </aside>
+          )}
+
+          {/* Main Terminal Window */}
         <main
           style={{
             transform: isMaximized
@@ -524,7 +566,8 @@ export const TerminalWindow: React.FC = () => {
             </div>
           </div>
         </main>
-      )}
-    </div>
-  )
+      </>
+    )}
+  </div>
+)
 }
