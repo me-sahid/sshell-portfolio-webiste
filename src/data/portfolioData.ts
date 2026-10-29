@@ -100,7 +100,7 @@ export const ACHIEVEMENTS: AchievementItem[] = [
 ]
 
 export const WELCOME_TEXT = `sahid al hassan
-computer science student, drawn to systems engineering
+computer science student, obsessed with cyber
 
 background
 - backend systems, distributed storage, and cybersecurity
