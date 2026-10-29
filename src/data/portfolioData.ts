@@ -99,6 +99,23 @@ export const ACHIEVEMENTS: AchievementItem[] = [
   },
 ]
 
+export const WELCOME_TEXT = `sahid al hassan
+computer science student, drawn to systems engineering
+
+background
+- backend systems, distributed storage, and cybersecurity
+- b.tech in cse @ chaitanya university (cgpa: 9.38)
+- diploma in cst @ jakir hossain polytechnic (cgpa: 8.00)
+
+projects
+- zancrypt: zero-knowledge cloud storage (fastapi, redis, aes-256-gcm)
+- redis-lite: high-performance in-memory key-value database (c/c++)
+- allido: localized service marketplace for underserved regions
+
+commands
+- type 'help' to see all available commands
+- type 'projects', 'skills', 'education', or 'resume' to explore`
+
 export const ASCII_BANNER = `
   ____        _     _     _      _    _   _                               
  / ___|  __ _| |__ (_) __| |    / \\  | | | | __ _ ___ ___  __ _ _ __  

@@ -3,104 +3,91 @@ import { VirtualFileSystem } from '../services/VirtualFileSystem'
 import { CommandRegistry } from '../services/CommandRegistry'
 import { CommandParser } from '../services/CommandParser'
 import type { TerminalEntry } from '../data/types'
-import { PROJECTS, IDENTITY } from '../data/portfolioData'
-import { BootSequence } from './BootSequence'
+import { PROJECTS, WELCOME_TEXT } from '../data/portfolioData'
 import { TerminalInput } from './TerminalInput'
 import { TerminalOutput } from './TerminalOutput'
 import { Terminal, Maximize2, Minimize2 } from 'lucide-react'
 
 export const TerminalWindow: React.FC = () => {
-  const [hasBooted, setHasBooted] = useState<boolean>(() => {
-    return sessionStorage.getItem('portfolio_booted') === 'true'
-  })
   const [entries, setEntries] = useState<TerminalEntry[]>([])
   const [history, setHistory] = useState<string[]>([])
   const [isLocked, setIsLocked] = useState<boolean>(false)
   const [isMaximized, setIsMaximized] = useState<boolean>(false)
 
+  // Shell typing animation state on reload
+  const [isTypingWelcome, setIsTypingWelcome] = useState<boolean>(true)
+  const [typedCommand, setTypedCommand] = useState<string>('')
+
   const vfsRef = useRef<VirtualFileSystem>(new VirtualFileSystem())
   const registryRef = useRef<CommandRegistry>(new CommandRegistry())
   const terminalBodyRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Initialize initial terminal entries after boot
-  const initTerminalOutput = () => {
-    const initialEntries: TerminalEntry[] = [
+  const finishWelcome = () => {
+    if (typingTimerRef.current) {
+      clearTimeout(typingTimerRef.current)
+    }
+    setIsTypingWelcome(false)
+    setEntries([
       {
-        id: 'init-whoami-cmd',
+        id: 'welcome-input',
         type: 'input',
-        command: 'whoami',
+        command: 'welcome',
         cwd: '~',
         content: '',
-        timestamp: Date.now() - 2000,
+        timestamp: Date.now() - 100,
       },
       {
-        id: 'init-whoami-out',
+        id: 'welcome-output',
         type: 'output',
-        content: `${IDENTITY.name}\n${IDENTITY.shortIdentity}\nFocus: ${IDENTITY.focus}`,
-        timestamp: Date.now() - 1900,
-      },
-      {
-        id: 'init-help-cmd',
-        type: 'input',
-        command: 'help',
-        cwd: '~',
-        content: '',
-        timestamp: Date.now() - 1000,
-      },
-      {
-        id: 'init-help-out',
-        type: 'output',
-        content: [
-          'help         Show available commands',
-          'whoami       Display my identity',
-          'about        Learn about my background and interests',
-          'projects     List my projects',
-          'project NAME Inspect a specific project',
-          'skills       Display my technical stack',
-          'education    Display my education and CGPA',
-          'achievements Display hackathons and academic achievements',
-          'resume       View or download my resume',
-          'contact      Display contact information',
-          'github       Open my GitHub profile',
-          'linkedin     Open my LinkedIn profile',
-          'clear        Clear terminal output',
-          'ls           List virtual portfolio files',
-          'pwd          Display the virtual working directory',
-          'cd PATH      Navigate the virtual directory',
-          'cat FILE     Display a supported portfolio file',
-          'history      Display commands entered in this session',
-          'date         Display the current date and time',
-          'neofetch     Display a portfolio summary',
-          'banner       Display a small ASCII wordmark',
-          '',
-          'Tip: Type a command below. Use ↑ / ↓ for command history and Tab for completion.',
-        ].join('\n'),
+        content: WELCOME_TEXT,
         timestamp: Date.now(),
       },
-    ]
-
-    setEntries(initialEntries)
+    ])
+    setTimeout(() => inputRef.current?.focus(), 50)
   }
 
+  // Reload typing animation
   useEffect(() => {
-    if (hasBooted && entries.length === 0) {
-      initTerminalOutput()
-    }
-  }, [hasBooted])
+    const target = 'welcome'
+    let currentIdx = 0
 
-  // Scroll to bottom when entries change
+    const typeNextChar = () => {
+      if (currentIdx < target.length) {
+        currentIdx++
+        setTypedCommand(target.slice(0, currentIdx))
+        typingTimerRef.current = setTimeout(typeNextChar, 75)
+      } else {
+        // Pausing briefly to simulate pressing Enter
+        typingTimerRef.current = setTimeout(() => {
+          finishWelcome()
+        }, 220)
+      }
+    }
+
+    // Initial brief delay before typing begins
+    typingTimerRef.current = setTimeout(typeNextChar, 250)
+
+    const handleSkip = () => {
+      finishWelcome()
+    }
+
+    window.addEventListener('keydown', handleSkip, { once: true })
+    return () => {
+      if (typingTimerRef.current) {
+        clearTimeout(typingTimerRef.current)
+      }
+      window.removeEventListener('keydown', handleSkip)
+    }
+  }, [])
+
+  // Auto-scroll to bottom
   useEffect(() => {
     if (terminalBodyRef.current) {
       terminalBodyRef.current.scrollTop = terminalBodyRef.current.scrollHeight
     }
-  }, [entries])
-
-  const handleBootComplete = () => {
-    sessionStorage.setItem('portfolio_booted', 'true')
-    setHasBooted(true)
-    initTerminalOutput()
-  }
+  }, [entries, typedCommand, isTypingWelcome])
 
   const handleCommandSubmit = (commandLine: string) => {
     const trimmed = commandLine.trim()
@@ -203,7 +190,13 @@ export const TerminalWindow: React.FC = () => {
         className={`w-full transition-all duration-200 bg-[#15181E] border border-[#30363D] rounded-xl shadow-2xl flex flex-col overflow-hidden ${
           isMaximized ? 'fixed inset-2 z-50 h-[calc(100vh-1rem)]' : 'max-w-4xl h-[85vh] min-h-[550px]'
         }`}
-        onClick={() => inputRef.current?.focus()}
+        onClick={() => {
+          if (isTypingWelcome) {
+            finishWelcome()
+          } else {
+            inputRef.current?.focus()
+          }
+        }}
       >
         {/* Minimal Terminal Header */}
         <header className="flex items-center justify-between px-4 py-2.5 bg-[#161B22] border-b border-[#30363D] select-none shrink-0">
@@ -211,7 +204,7 @@ export const TerminalWindow: React.FC = () => {
             <span
               onClick={() => {
                 setEntries([])
-                initTerminalOutput()
+                finishWelcome()
               }}
               className="w-3 h-3 rounded-full bg-[#FF5F56] hover:opacity-80 cursor-pointer inline-block"
               title="Reset terminal"
@@ -249,16 +242,26 @@ export const TerminalWindow: React.FC = () => {
           </div>
         </header>
 
-        {/* Pure Command Terminal Stream */}
+        {/* Pure Terminal Stream */}
         <div
           ref={terminalBodyRef}
           className="flex-1 p-4 md:p-6 overflow-y-auto font-mono text-sm leading-relaxed"
         >
-          {!hasBooted ? (
-            <BootSequence onComplete={handleBootComplete} />
-          ) : (
-            <div className="space-y-4">
-              <TerminalOutput entries={entries} />
+          <div className="space-y-4">
+            <TerminalOutput entries={entries} />
+
+            {/* Simulated typing on reload */}
+            {isTypingWelcome ? (
+              <div className="flex items-center space-x-2 font-mono text-sm">
+                <span className="text-[#7EE787] font-bold select-none shrink-0">
+                  sahid@portfolio:~$
+                </span>
+                <span className="text-[#79C0FF] font-semibold">
+                  {typedCommand}
+                  <span className="inline-block w-2 h-4 bg-[#7EE787] cursor-blink align-middle ml-0.5" />
+                </span>
+              </div>
+            ) : (
               <TerminalInput
                 inputRef={inputRef}
                 promptPath={vfsRef.current.getPromptPath()}
@@ -267,8 +270,8 @@ export const TerminalWindow: React.FC = () => {
                 history={history}
                 isLocked={isLocked}
               />
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </main>
     </div>

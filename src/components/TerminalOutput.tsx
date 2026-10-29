@@ -6,9 +6,7 @@ interface TerminalOutputProps {
 }
 
 function renderContentWithLinks(text: string) {
-  // Regex to detect urls
   const urlRegex = /(https?:\/\/[^\s]+|\/Sahid_Al_Hassan_Resume\.pdf)/g
-
   const parts: (string | React.ReactNode)[] = []
   let lastIndex = 0
   let match
@@ -46,6 +44,80 @@ function renderContentWithLinks(text: string) {
   return parts
 }
 
+function renderFormattedBlock(content: string) {
+  const lines = content.split('\n')
+  const sectionKeywords = new Set([
+    'background',
+    'projects',
+    'featured projects',
+    'commands',
+    'contact',
+    'education',
+    'technical skills',
+    'certificates / achievements',
+  ])
+
+  return (
+    <div className="space-y-1">
+      {lines.map((line, idx) => {
+        const trimmed = line.trim()
+        const lower = trimmed.toLowerCase()
+
+        // Empty line
+        if (!trimmed) {
+          return <div key={idx} className="h-2" />
+        }
+
+        // Section header (e.g. "background", "projects", "commands")
+        if (sectionKeywords.has(lower) || (lower.endsWith(':') && lower.length < 25 && !lower.includes(' '))) {
+          return (
+            <div key={idx} className="text-[#7EE787] font-semibold pt-1">
+              {line}
+            </div>
+          )
+        }
+
+        // Title line (e.g. "sahid al hassan")
+        if (idx === 0 && lower === 'sahid al hassan') {
+          return (
+            <div key={idx} className="text-base font-bold text-[#E6EDF3] tracking-wide">
+              {line}
+            </div>
+          )
+        }
+
+        // Subtitle line immediately following title
+        if (idx === 1 && lines[0]?.trim().toLowerCase() === 'sahid al hassan') {
+          return (
+            <div key={idx} className="text-sm text-[#8B949E] pb-1">
+              {line}
+            </div>
+          )
+        }
+
+        // Bullet point
+        if (trimmed.startsWith('- ') || trimmed.startsWith('• ')) {
+          const bullet = trimmed.substring(0, 2)
+          const text = trimmed.substring(2)
+          return (
+            <div key={idx} className="flex items-start space-x-1.5 pl-0.5">
+              <span className="text-[#8B949E] select-none shrink-0">{bullet}</span>
+              <span className="text-[#E6EDF3]">{renderContentWithLinks(text)}</span>
+            </div>
+          )
+        }
+
+        // Standard line
+        return (
+          <div key={idx} className="text-[#E6EDF3]">
+            {renderContentWithLinks(line)}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 export const TerminalOutput: React.FC<TerminalOutputProps> = ({ entries }) => {
   return (
     <div className="space-y-3 font-mono text-sm leading-relaxed">
@@ -72,9 +144,9 @@ export const TerminalOutput: React.FC<TerminalOutputProps> = ({ entries }) => {
         }
 
         return (
-          <div key={entry.id} className="text-[#E6EDF3] whitespace-pre-wrap">
+          <div key={entry.id} className="whitespace-pre-wrap">
             {typeof entry.content === 'string'
-              ? renderContentWithLinks(entry.content)
+              ? renderFormattedBlock(entry.content)
               : entry.content}
           </div>
         )

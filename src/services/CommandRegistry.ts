@@ -5,6 +5,7 @@ import {
   SKILLS,
   PROJECTS,
   ACHIEVEMENTS,
+  WELCOME_TEXT,
   ASCII_BANNER,
   ASCII_NEOFETCH_LOGO,
 } from '../data/portfolioData'
@@ -134,6 +135,16 @@ export class CommandRegistry {
   }
 
   private registerDefaults() {
+    // welcome
+    this.register({
+      name: 'welcome',
+      description: 'Display introduction and background overview',
+      usage: 'welcome',
+      handler: () => {
+        return { success: true, output: WELCOME_TEXT }
+      },
+    })
+
     // help
     this.register({
       name: 'help',
@@ -163,7 +174,6 @@ export class CommandRegistry {
           ),
           '',
           'Tip: Type a command above. Use ↑ / ↓ for history, Tab for autocompletion.',
-          'Use ↑ / ↓ for history, Tab for autocompletion.',
         ]
         return { success: true, output: lines.join('\n') }
       },
