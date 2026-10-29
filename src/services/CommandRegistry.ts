@@ -294,8 +294,8 @@ export class CommandRegistry {
           'Featured Projects:',
           '',
           ...PROJECTS.map(
-            (p, idx) =>
-              `${idx === PROJECTS.length - 1 ? '└──' : '├──'} ${p.name.padEnd(12)} :: [${p.technologies.slice(0, 3).join(', ')}...] -> ${p.dates}`
+            (p) =>
+              `  • ${p.name.padEnd(12)} [${p.technologies.slice(0, 3).join(', ')}...] -> ${p.dates}`
           ),
           '',
           "Use 'project <name>' to inspect a specific project (e.g., 'project zancrypt').",
@@ -357,13 +357,23 @@ export class CommandRegistry {
       usage: 'skills',
       handler: () => {
         const lines = [
-          'Technical Skills:',
+          'TECHNICAL SKILLS',
+          '================',
           '',
-          `├── [languages]    :: ${SKILLS.programmingLanguages.join(', ')}`,
-          `├── [databases]    :: ${SKILLS.databasesAndCaching.join(', ')}`,
-          `├── [frameworks]   :: ${SKILLS.frameworksAndWeb.join(', ')}`,
-          `├── [tools]        :: ${SKILLS.toolsAndTechnologies.join(', ')}`,
-          `└── [core]         :: ${SKILLS.coreConcepts.join(', ')}`,
+          'Programming Languages:',
+          `  ${SKILLS.programmingLanguages.join('  •  ')}`,
+          '',
+          'Databases & Caching:',
+          `  ${SKILLS.databasesAndCaching.join('  •  ')}`,
+          '',
+          'Frameworks & Web:',
+          `  ${SKILLS.frameworksAndWeb.join('  •  ')}`,
+          '',
+          'Tools/Technologies:',
+          `  ${SKILLS.toolsAndTechnologies.join('  •  ')}`,
+          '',
+          'Core Concepts:',
+          `  ${SKILLS.coreConcepts.join('  •  ')}`,
         ]
         return { success: true, output: lines.join('\n') }
       },
@@ -375,14 +385,14 @@ export class CommandRegistry {
       description: 'Display my education and CGPA',
       usage: 'education',
       handler: () => {
-        const sections: string[] = ['Education:']
+        const sections: string[] = ['EDUCATION', '=========']
         EDUCATION.forEach((edu, i) => {
-          const isLast = i === EDUCATION.length - 1
           sections.push('')
-          sections.push(`${isLast ? '└──' : '├──'} [0${i + 1}] ${edu.degree}`)
-          sections.push(`    ├── institution :: ${edu.institution} (${edu.location})`)
-          sections.push(`    ├── score       :: (cgpa: ${edu.cgpa})`)
-          sections.push(`    └── timeline    :: ${edu.dates}`)
+          sections.push(`${i + 1}. ${edu.institution}`)
+          sections.push(`   Degree:   ${edu.degree}`)
+          sections.push(`   CGPA:     ${edu.cgpa}`)
+          sections.push(`   Location: ${edu.location}`)
+          sections.push(`   Timeline: ${edu.dates}`)
         })
         return { success: true, output: sections.join('\n') }
       },
@@ -462,13 +472,14 @@ export class CommandRegistry {
       usage: 'contact',
       handler: () => {
         const lines = [
-          'Contact Information:',
-          '',
-          `├── email    :: ${IDENTITY.email}`,
-          `├── phone    :: ${IDENTITY.phone}`,
-          `├── linkedin :: ${IDENTITY.linkedin}`,
-          `├── github   :: ${IDENTITY.github}`,
-          `└── website  :: ${IDENTITY.website}`,
+          'CONTACT INFORMATION',
+          '===================',
+          `Name:     ${IDENTITY.name}`,
+          `Phone:    ${IDENTITY.phone}`,
+          `Email:    ${IDENTITY.email}`,
+          `LinkedIn: ${IDENTITY.linkedin}`,
+          `GitHub:   ${IDENTITY.github}`,
+          `Website:  ${IDENTITY.website}`,
         ]
         return { success: true, output: lines.join('\n') }
       },
