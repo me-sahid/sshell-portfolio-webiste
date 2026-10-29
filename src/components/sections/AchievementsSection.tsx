@@ -70,3 +70,4 @@ export const AchievementsSection: React.FC<SectionProps> = ({ onBackToTerminal }
     </div>
   )
 }
+

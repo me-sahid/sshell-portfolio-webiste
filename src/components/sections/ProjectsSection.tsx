@@ -87,3 +87,4 @@ export const ProjectsSection: React.FC<SectionProps> = ({ onBackToTerminal }) =>
     </div>
   )
 }
+

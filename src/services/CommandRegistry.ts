@@ -162,7 +162,7 @@ export class CommandRegistry {
             (c) => `${c.name.padEnd(14)} ${c.description}`
           ),
           '',
-          'Tip: Type a command above or click any section in the top menu.',
+          'Tip: Type a command above. Use ↑ / ↓ for history, Tab for autocompletion.',
           'Use ↑ / ↓ for history, Tab for autocompletion.',
         ]
         return { success: true, output: lines.join('\n') }
@@ -402,8 +402,6 @@ export class CommandRegistry {
           'Options:',
           '  resume --view       Open resume PDF in new tab',
           '  resume --download   Download resume PDF to your device',
-          '',
-          'Or click ~/resume in the navigation bar.',
         ]
         return { success: true, output: lines.join('\n') }
       },

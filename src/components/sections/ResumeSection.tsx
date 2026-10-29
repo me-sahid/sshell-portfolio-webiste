@@ -86,3 +86,4 @@ export const ResumeSection: React.FC<SectionProps> = ({ onBackToTerminal }) => {
     </div>
   )
 }
+

@@ -50,3 +50,4 @@ export const Navigation: React.FC<NavigationProps> = ({ activeView, onSelectView
     </nav>
   )
 }
+

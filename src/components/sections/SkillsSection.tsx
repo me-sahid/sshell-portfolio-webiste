@@ -80,3 +80,4 @@ export const SkillsSection: React.FC<SectionProps> = ({ onBackToTerminal }) => {
     </div>
   )
 }
+

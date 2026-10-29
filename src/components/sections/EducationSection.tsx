@@ -66,3 +66,4 @@ export const EducationSection: React.FC<SectionProps> = ({ onBackToTerminal }) =
     </div>
   )
 }
+

@@ -89,3 +89,4 @@ export const BootSequence: React.FC<BootSequenceProps> = ({ onComplete }) => {
     </div>
   )
 }
+
