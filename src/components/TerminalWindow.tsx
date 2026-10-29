@@ -257,9 +257,9 @@ export const TerminalWindow: React.FC = () => {
                 <span className="text-[#7EE787] font-bold select-none shrink-0">
                   sahid@portfolio:~$
                 </span>
-                <span className="text-[#79C0FF] font-semibold">
-                  {typedCommand}
-                  <span className="inline-block w-2 h-4 bg-[#7EE787] cursor-blink align-middle ml-0.5" />
+                <span className="text-[#79C0FF] font-semibold flex items-center">
+                  <span>{typedCommand}</span>
+                  <span className="text-[#7EE787] font-bold cursor-blink select-none ml-0.5">_</span>
                 </span>
               </div>
             ) : (
