@@ -533,13 +533,13 @@ export const TerminalWindow: React.FC = () => {
 
               {/* Step 1: Slower typing animation */}
               {animPhase === 'typing' && (
-                <div className="flex flex-wrap sm:flex-nowrap items-baseline gap-x-2 gap-y-1 font-mono text-xs sm:text-sm">
-                  <span className="text-[var(--prompt-green)] font-bold select-none shrink-0">
+                <div className="flex items-center gap-1.5 font-mono text-xs sm:text-sm">
+                  <span className="text-[var(--prompt-green)] font-bold select-none shrink-0 leading-none">
                     sahid@portfolio:~$
                   </span>
-                  <span className="text-[var(--command-cyan)] font-semibold flex items-center">
+                  <span className="text-[var(--command-cyan)] font-semibold flex items-center leading-none">
                     <span>{typedCommand}</span>
-                    <span className="inline-block w-[7px] sm:w-[8.5px] h-[1.15em] bg-[var(--prompt-green)] cursor-blink align-text-bottom select-none ml-[1px]" />
+                    <span className="inline-block w-[7.5px] sm:w-[8.5px] h-[1.2em] bg-[var(--prompt-green)] cursor-blink select-none ml-[1px]" />
                   </span>
                 </div>
               )}

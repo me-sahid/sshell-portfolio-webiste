@@ -218,24 +218,24 @@ export const TerminalInput: React.FC<TerminalInputProps> = ({
       )}
 
       <div
-        className="flex flex-wrap sm:flex-nowrap items-baseline gap-x-2 gap-y-1 cursor-text"
+        className="flex items-center gap-1.5 cursor-text font-mono text-xs sm:text-sm"
         onClick={() => inputRef.current?.focus()}
       >
-        <span className="text-[var(--prompt-green)] font-bold select-none shrink-0 text-xs sm:text-sm">
+        <span className="text-[var(--prompt-green)] font-bold select-none shrink-0 leading-none">
           sahid@portfolio:{promptPath}$
         </span>
 
-        <div className="relative flex-1 flex items-center min-w-[120px] min-h-[1.5rem]">
+        <div className="relative flex-1 flex items-center min-w-[80px]">
           {/* Visual text with bold fat VS Code style block blinker */}
           <div className="font-mono text-xs sm:text-sm pointer-events-none select-none flex items-center whitespace-pre leading-none break-all">
             <span className="text-[var(--text-primary)]">{beforeCursor}</span>
             {isFocused && (
               charAtCursor !== undefined ? (
-                <span className="bg-[var(--prompt-green)] text-[var(--term-surface)] font-bold cursor-blink inline-block px-[0.5px]">
+                <span className="bg-[var(--prompt-green)] text-[var(--term-surface)] font-bold cursor-blink inline-block px-[0.5px] leading-none">
                   {charAtCursor}
                 </span>
               ) : (
-                <span className="inline-block w-[7px] sm:w-[8.5px] h-[1.15em] bg-[var(--prompt-green)] cursor-blink align-text-bottom select-none" />
+                <span className="inline-block w-[7.5px] sm:w-[8.5px] h-[1.2em] bg-[var(--prompt-green)] cursor-blink select-none" />
               )
             )}
             <span className="text-[var(--text-primary)]">{afterCursor}</span>
@@ -261,7 +261,7 @@ export const TerminalInput: React.FC<TerminalInputProps> = ({
             onSelect={syncCursor}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
-            className="absolute inset-0 w-full bg-transparent border-none outline-none text-transparent caret-transparent p-0 text-base sm:text-sm font-mono"
+            className="absolute inset-0 w-full h-full bg-transparent border-none outline-none text-transparent caret-transparent p-0 text-base sm:text-sm font-mono"
             autoCapitalize="none"
             autoComplete="off"
             autoCorrect="off"
