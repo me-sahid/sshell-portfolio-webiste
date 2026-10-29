@@ -371,13 +371,17 @@ export const TerminalWindow: React.FC = () => {
     >
       {/* Background center easter egg (revealed when user moves the terminal away from the center) */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
-        <span
+        <div
           onClick={() => setIsCheered((prev) => !prev)}
-          className="pointer-events-auto text-xs font-mono text-[#8B949E] hover:text-[#7EE787] cursor-pointer transition-colors duration-200 select-none"
-          title="Click me"
+          className="pointer-events-auto font-mono text-xs cursor-pointer select-none flex items-center space-x-1.5 transition-all duration-200 hover:opacity-100 opacity-80"
+          title="system message"
         >
-          {isCheered ? 'you are doing better, keep up ;3' : 'hey ;)'}
-        </span>
+          <span className="text-[#7EE787] font-bold select-none">~ $</span>
+          <span className="text-[#8B949E] hover:text-[#7EE787] transition-colors">
+            {isCheered ? 'you are doing better, keep up ;3' : 'hey ;)'}
+          </span>
+          <span className="inline-block w-1.5 h-3 bg-[#7EE787] cursor-blink align-middle" />
+        </div>
       </div>
 
       {/* Minimized Docked Icon Only */}
