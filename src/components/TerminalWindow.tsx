@@ -28,10 +28,11 @@ export const TerminalWindow: React.FC = () => {
     initY: 0,
   })
 
-  // Animation states: 'typing' -> 'streaming' -> 'done'
-  const [animPhase, setAnimPhase] = useState<'typing' | 'streaming' | 'done'>('typing')
+  // Animation phases: 'typing' -> 'streaming' -> 'loading-bar' -> 'done'
+  const [animPhase, setAnimPhase] = useState<'typing' | 'streaming' | 'loading-bar' | 'done'>('typing')
   const [typedCommand, setTypedCommand] = useState<string>('')
   const [streamedLineIndex, setStreamedLineIndex] = useState<number>(0)
+  const [loadPercent, setLoadPercent] = useState<number>(0)
 
   const vfsRef = useRef<VirtualFileSystem>(new VirtualFileSystem())
   const registryRef = useRef<CommandRegistry>(new CommandRegistry())
@@ -53,54 +54,78 @@ export const TerminalWindow: React.FC = () => {
         command: 'welcome',
         cwd: '~',
         content: '',
-        timestamp: Date.now() - 100,
+        timestamp: Date.now() - 200,
       },
       {
         id: 'welcome-out',
         type: 'output',
         content: WELCOME_TEXT,
+        timestamp: Date.now() - 100,
+      },
+      {
+        id: 'welcome-loader',
+        type: 'output',
+        content: 'Loading interactive shell: [██████████████████████████████] 100% [ OK ]',
         timestamp: Date.now(),
       },
     ])
-    setTimeout(() => inputRef.current?.focus(), 50)
+    setTimeout(() => inputRef.current?.focus(), 60)
   }
 
-  // Sequential boot typing and apt-get update style line streaming
+  // Animation sequence on reload
   useEffect(() => {
     const targetCommand = 'welcome'
     let charIdx = 0
 
-    // Step 1: Realistic typing keystroke by keystroke
+    // Step 1: Deliberate, slower typing keystroke by keystroke (~115ms)
     const typeNextChar = () => {
       if (charIdx < targetCommand.length) {
         charIdx++
         setTypedCommand(targetCommand.slice(0, charIdx))
-        animTimerRef.current = setTimeout(typeNextChar, 55)
+        animTimerRef.current = setTimeout(typeNextChar, 115)
       } else {
-        // Quick natural pause after typing before executing
+        // Natural pause after typing finishes before execution
         animTimerRef.current = setTimeout(() => {
           setAnimPhase('streaming')
           streamNextLine(0)
-        }, 180)
+        }, 300)
       }
     }
 
-    // Step 2: Line by line output stream like system booting / apt-get update
+    // Step 2: Line by line welcome output stream
     const streamNextLine = (lineIdx: number) => {
       if (lineIdx < welcomeLines.current.length) {
         setStreamedLineIndex(lineIdx + 1)
         animTimerRef.current = setTimeout(() => {
           streamNextLine(lineIdx + 1)
-        }, 42)
+        }, 45)
       } else {
+        // Pause after text output before Linux loading bar begins
+        animTimerRef.current = setTimeout(() => {
+          setAnimPhase('loading-bar')
+          startLoadingBar(0)
+        }, 220)
+      }
+    }
+
+    // Step 3: Linux-style progress bar animation (~1.3s total)
+    const startLoadingBar = (progress: number) => {
+      if (progress < 100) {
+        const next = Math.min(100, progress + Math.floor(Math.random() * 8) + 4)
+        setLoadPercent(next)
+        animTimerRef.current = setTimeout(() => {
+          startLoadingBar(next)
+        }, 45)
+      } else {
+        // Pause briefly at 100% before the user shell prompt appears
         animTimerRef.current = setTimeout(() => {
           finishWelcomeInstantly()
-        }, 100)
+        }, 300)
       }
     }
 
     // Initial slight pause before typing starts
-    animTimerRef.current = setTimeout(typeNextChar, 150)
+    animTimerRef.current = setTimeout(typeNextChar, 200)
 
     const handleSkip = () => {
       finishWelcomeInstantly()
@@ -115,18 +140,16 @@ export const TerminalWindow: React.FC = () => {
     }
   }, [])
 
-  // Auto-scroll on any change during typing or streaming
+  // Auto-scroll on any change during typing, streaming, or loading
   useEffect(() => {
     if (terminalBodyRef.current) {
       terminalBodyRef.current.scrollTop = terminalBodyRef.current.scrollHeight
     }
-  }, [entries, typedCommand, streamedLineIndex, animPhase])
+  }, [entries, typedCommand, streamedLineIndex, loadPercent, animPhase])
 
   // Drag handlers using Pointer Events with Pointer Capture
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    // Only drag with primary mouse button or touch
     if (e.button !== 0) return
-    // Prevent dragging if clicking window control buttons
     if ((e.target as HTMLElement).closest('[data-no-drag]')) return
     if (isMaximized || isMinimized) return
 
@@ -148,7 +171,6 @@ export const TerminalWindow: React.FC = () => {
     const deltaX = e.clientX - dragStartRef.current.startX
     const deltaY = e.clientY - dragStartRef.current.startY
 
-    // Calculate clamped bounds so window cannot be lost off screen
     const maxBoundX = window.innerWidth / 2 - 50
     const maxBoundY = window.innerHeight / 2 - 50
 
@@ -266,6 +288,9 @@ export const TerminalWindow: React.FC = () => {
   const currentlyStreamedText = welcomeLines.current
     .slice(0, streamedLineIndex)
     .join('\n')
+
+  const totalBarBlocks = 30
+  const filledBlocks = Math.round((loadPercent / 100) * totalBarBlocks)
 
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center p-2 sm:p-4 md:p-6 bg-[#0D1117] overflow-hidden select-none">
@@ -390,7 +415,7 @@ export const TerminalWindow: React.FC = () => {
               {/* Standard Terminal Entries */}
               <TerminalOutput entries={entries} />
 
-              {/* In-progress typing & streaming animation */}
+              {/* Step 1: Slower typing animation */}
               {animPhase === 'typing' && (
                 <div className="flex items-center space-x-2 font-mono text-sm">
                   <span className="text-[#7EE787] font-bold select-none shrink-0">
@@ -403,7 +428,8 @@ export const TerminalWindow: React.FC = () => {
                 </div>
               )}
 
-              {animPhase === 'streaming' && (
+              {/* Step 2: Streaming welcome output */}
+              {(animPhase === 'streaming' || animPhase === 'loading-bar') && (
                 <div className="space-y-3 font-mono text-sm">
                   <div className="flex items-center space-x-2">
                     <span className="text-[#7EE787] font-bold select-none shrink-0">
@@ -424,7 +450,31 @@ export const TerminalWindow: React.FC = () => {
                 </div>
               )}
 
-              {/* Live Interactive Command Prompt */}
+              {/* Step 3: Linux-style progress loading bar before prompt appears */}
+              {animPhase === 'loading-bar' && (
+                <div className="pt-2 font-mono text-xs sm:text-sm space-y-1">
+                  <div className="flex items-center space-x-2 text-[#8B949E]">
+                    <span className="text-[#7EE787] font-bold">system:</span>
+                    <span>loading interactive shell environment...</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[#7EE787] font-bold">[</span>
+                    <span className="text-[#7EE787] tracking-tighter">
+                      {'█'.repeat(filledBlocks)}
+                    </span>
+                    <span className="text-[#30363D] tracking-tighter">
+                      {'░'.repeat(Math.max(0, totalBarBlocks - filledBlocks))}
+                    </span>
+                    <span className="text-[#7EE787] font-bold">]</span>
+                    <span className="text-[#79C0FF] font-bold w-12">{loadPercent}%</span>
+                    {loadPercent === 100 && (
+                      <span className="text-[#7EE787] font-bold">[ OK ]</span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Step 4: Shell terminal prompt where user inputs appears after loading bar */}
               {animPhase === 'done' && (
                 <TerminalInput
                   inputRef={inputRef}
