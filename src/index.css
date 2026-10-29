@@ -4,6 +4,7 @@
   :root {
     --bg-main: #0D1117;
     --term-surface: #15181E;
+    --term-header: #161B22;
     --text-primary: #E6EDF3;
     --prompt-green: #7EE787;
     --command-cyan: #79C0FF;

@@ -305,4 +305,35 @@ describe('Interactive Linux Terminal Portfolio Tests', () => {
     expect(histRes.success).toBe(true)
     expect(histRes.output).toContain('whoami')
   })
+
+  it('runs theme command to inspect and change themes', () => {
+    let activeTheme = 'default'
+    const themeContext = {
+      ...context,
+      currentTheme: activeTheme,
+      setTheme: (t: string) => {
+        activeTheme = t
+        return true
+      },
+    }
+
+    // List themes
+    const listRes = registry.execute(CommandParser.parse('theme'), themeContext)
+    expect(listRes.success).toBe(true)
+    expect(listRes.output).toContain('matrix')
+    expect(listRes.output).toContain('dracula')
+    expect(listRes.output).toContain('nord')
+    expect(listRes.output).toContain('Current theme: default')
+
+    // Switch theme
+    const switchRes = registry.execute(CommandParser.parse('theme matrix'), themeContext)
+    expect(switchRes.success).toBe(true)
+    expect(switchRes.output).toContain("Theme changed to 'matrix'")
+    expect(activeTheme).toBe('matrix')
+
+    // Switch to invalid theme
+    const invalidRes = registry.execute(CommandParser.parse('theme nonexistent'), themeContext)
+    expect(invalidRes.success).toBe(false)
+    expect(invalidRes.output).toContain("'nonexistent' is not a valid theme")
+  })
 })

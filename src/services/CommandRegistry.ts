@@ -9,6 +9,7 @@ import {
   ASCII_BANNER,
   ASCII_NEOFETCH_LOGO,
 } from '../data/portfolioData'
+import { THEMES } from '../data/themes'
 import { VirtualFileSystem } from './VirtualFileSystem'
 import type { ParsedCommand } from './CommandParser'
 
@@ -23,6 +24,8 @@ export interface CommandDefinition {
 export interface CommandContext {
   vfs: VirtualFileSystem
   history: string[]
+  currentTheme?: string
+  setTheme?: (themeId: string) => boolean
   onSwitchView?: (view: string) => void
   onClear?: () => void
 }
@@ -142,6 +145,51 @@ export class CommandRegistry {
       usage: 'welcome',
       handler: () => {
         return { success: true, output: WELCOME_TEXT }
+      },
+    })
+
+    // theme
+    this.register({
+      name: 'theme',
+      description: 'Display or change the terminal color theme',
+      usage: 'theme [name]',
+      handler: (parsed, ctx) => {
+        const themeList = Object.keys(THEMES)
+
+        if (parsed.args.length === 0) {
+          const current = ctx.currentTheme || 'default'
+          const lines = [
+            'Available themes:',
+            '',
+            ...themeList.map((id) => {
+              const th = THEMES[id]
+              const isCurrent = id === current ? ' (active)' : ''
+              return `  • ${id.padEnd(12)} - ${th.description}${isCurrent}`
+            }),
+            '',
+            `Current theme: ${current}`,
+            'Usage: theme <name>',
+            'Example: theme matrix',
+          ]
+          return { success: true, output: lines.join('\n') }
+        }
+
+        const target = parsed.args[0].toLowerCase()
+        if (!THEMES[target]) {
+          return {
+            success: false,
+            output: `theme: '${target}' is not a valid theme.\nAvailable themes: ${themeList.join(', ')}\nUsage: theme <name>`,
+          }
+        }
+
+        if (ctx.setTheme) {
+          ctx.setTheme(target)
+        }
+
+        return {
+          success: true,
+          output: `Theme changed to '${target}' (${THEMES[target].name}).`,
+        }
       },
     })
 

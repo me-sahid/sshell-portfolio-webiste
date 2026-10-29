@@ -4,6 +4,7 @@ import { CommandRegistry } from '../services/CommandRegistry'
 import { CommandParser } from '../services/CommandParser'
 import type { TerminalEntry } from '../data/types'
 import { PROJECTS, WELCOME_TEXT } from '../data/portfolioData'
+import { THEMES } from '../data/themes'
 import { TerminalInput } from './TerminalInput'
 import { TerminalOutput } from './TerminalOutput'
 import { CustomIcon } from './CustomIcon'
@@ -13,6 +14,11 @@ export const TerminalWindow: React.FC = () => {
   const [entries, setEntries] = useState<TerminalEntry[]>([])
   const [history, setHistory] = useState<string[]>([])
   const [isLocked, setIsLocked] = useState<boolean>(false)
+
+  // Theme management: persisted in localStorage
+  const [themeId, setThemeId] = useState<string>(() => {
+    return localStorage.getItem('terminal_theme') || 'default'
+  })
 
   // Window management states: normal, maximized, minimized, dragging
   const [isMaximized, setIsMaximized] = useState<boolean>(false)
@@ -142,7 +148,6 @@ export const TerminalWindow: React.FC = () => {
           startPacmanLoading(next)
         }, 55)
       } else {
-        // When 100% reached, pause briefly so the user sees [ OK ] before the terminal appears slowly
         animTimerRef.current = setTimeout(() => {
           finishWelcomeInstantly()
         }, 380)
@@ -241,6 +246,15 @@ export const TerminalWindow: React.FC = () => {
     const result = registryRef.current.execute(parsed, {
       vfs: vfsRef.current,
       history: [...history, trimmed],
+      currentTheme: themeId,
+      setTheme: (newTheme: string) => {
+        if (THEMES[newTheme]) {
+          setThemeId(newTheme)
+          localStorage.setItem('terminal_theme', newTheme)
+          return true
+        }
+        return false
+      },
     })
 
     if (result.clear) {
@@ -288,6 +302,16 @@ export const TerminalWindow: React.FC = () => {
 
     const command = parts[0].toLowerCase()
 
+    if (command === 'theme') {
+      const themeNames = Object.keys(THEMES)
+      const matches = themeNames.filter((t) => t.startsWith(lastWord.toLowerCase()))
+      if (matches.length === 1) {
+        parts[parts.length - 1] = matches[0]
+        return { completed: parts.join(' ') }
+      }
+      return { completed: currentInput, matches }
+    }
+
     if (command === 'project') {
       const projectNames = PROJECTS.map((p) => p.id)
       const matches = projectNames.filter((name) => name.startsWith(lastWord.toLowerCase()))
@@ -329,13 +353,27 @@ export const TerminalWindow: React.FC = () => {
     }
   }
 
+  const activeTheme = THEMES[themeId] || THEMES.default
+
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center p-2 sm:p-4 md:p-6 bg-[#0D1117] overflow-hidden select-none">
+    <div
+      style={{
+        '--bg-main': activeTheme.colors.bgMain,
+        '--term-surface': activeTheme.colors.termSurface,
+        '--term-header': activeTheme.colors.termHeader,
+        '--prompt-green': activeTheme.colors.promptGreen,
+        '--command-cyan': activeTheme.colors.commandCyan,
+        '--text-primary': activeTheme.colors.textPrimary,
+        '--text-secondary': activeTheme.colors.textSecondary,
+        '--term-border': activeTheme.colors.termBorder,
+      } as React.CSSProperties}
+      className="relative min-h-screen w-full flex items-center justify-center p-2 sm:p-4 md:p-6 bg-[var(--bg-main)] text-[var(--text-primary)] overflow-hidden select-none transition-colors duration-300"
+    >
       {/* Background center easter egg (revealed when user moves the terminal away from the center) */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0">
         <span
           onClick={() => setIsCheered((prev) => !prev)}
-          className="pointer-events-auto text-xs font-mono text-[#8B949E] hover:text-[#7EE787] cursor-pointer transition-colors duration-200 select-none"
+          className="pointer-events-auto text-xs font-mono text-[var(--text-secondary)] hover:text-[var(--prompt-green)] cursor-pointer transition-colors duration-200 select-none"
           title="Click me"
         >
           {isCheered ? 'you are doing better, keep up ;3' : 'hey ;)'}
@@ -349,7 +387,7 @@ export const TerminalWindow: React.FC = () => {
             setIsMinimized(false)
             setTimeout(() => inputRef.current?.focus(), 150)
           }}
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-12 h-12 bg-[#161B22] border border-[#30363D] hover:border-[#7EE787] rounded-xl shadow-2xl cursor-pointer text-[#7EE787] transition-all duration-300 hover:scale-110 active:scale-95 flex items-center justify-center group"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-12 h-12 bg-[var(--term-header)] border border-[var(--term-border)] hover:border-[var(--prompt-green)] rounded-xl shadow-2xl cursor-pointer text-[var(--prompt-green)] transition-all duration-300 hover:scale-110 active:scale-95 flex items-center justify-center group"
           title="Restore terminal"
           aria-label="Restore terminal"
         >
@@ -364,10 +402,10 @@ export const TerminalWindow: React.FC = () => {
               : `translate3d(${dragPos.x}px, ${dragPos.y}px, 0)`,
             transition: isDragging
               ? 'none'
-              : 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), width 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+              : 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), width 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease, border-color 0.3s ease',
             willChange: 'transform',
           }}
-          className={`bg-[#15181E] border border-[#30363D] rounded-xl shadow-2xl flex flex-col overflow-hidden ${
+          className={`bg-[var(--term-surface)] border border-[var(--term-border)] rounded-xl shadow-2xl flex flex-col overflow-hidden transition-colors duration-300 ${
             isMaximized
               ? 'fixed inset-2 md:inset-4 z-50 w-[calc(100vw-1rem)] md:w-[calc(100vw-2rem)] h-[calc(100vh-1rem)] md:h-[calc(100vh-2rem)]'
               : 'w-full max-w-4xl h-[85vh] min-h-[550px]'
@@ -387,7 +425,7 @@ export const TerminalWindow: React.FC = () => {
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
             onDoubleClick={() => setIsMaximized((prev) => !prev)}
-            className={`flex items-center justify-between px-4 py-2.5 bg-[#161B22] border-b border-[#30363D] select-none shrink-0 ${
+            className={`flex items-center justify-between px-4 py-2.5 bg-[var(--term-header)] border-b border-[var(--term-border)] select-none shrink-0 transition-colors duration-300 ${
               isMaximized ? 'cursor-default' : isDragging ? 'cursor-grabbing' : 'cursor-grab'
             }`}
           >
@@ -421,9 +459,9 @@ export const TerminalWindow: React.FC = () => {
             </div>
 
             {/* Title / Hostname */}
-            <div className="flex items-center space-x-1.5 text-xs text-[#8B949E] font-mono pointer-events-none">
-              <CustomIcon className="w-3.5 h-3.5 text-[#7EE787]" />
-              <span className="text-[#E6EDF3] font-medium">
+            <div className="flex items-center space-x-1.5 text-xs text-[var(--text-secondary)] font-mono pointer-events-none">
+              <CustomIcon className="w-3.5 h-3.5 text-[var(--prompt-green)]" />
+              <span className="text-[var(--text-primary)] font-medium">
                 sahid@portfolio:{vfsRef.current.getPromptPath()}
               </span>
             </div>
@@ -435,7 +473,7 @@ export const TerminalWindow: React.FC = () => {
                   e.stopPropagation()
                   setIsMinimized(true)
                 }}
-                className="p-1 rounded text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#21262D] transition-colors"
+                className="p-1 rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[#21262D]/30 transition-colors"
                 title="Minimize"
               >
                 <Minus className="w-3.5 h-3.5" />
@@ -445,7 +483,7 @@ export const TerminalWindow: React.FC = () => {
                   e.stopPropagation()
                   setIsMaximized((prev) => !prev)
                 }}
-                className="p-1 rounded text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#21262D] transition-colors"
+                className="p-1 rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[#21262D]/30 transition-colors"
                 title={isMaximized ? 'Restore Window' : 'Maximize Window'}
               >
                 {isMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
@@ -465,12 +503,12 @@ export const TerminalWindow: React.FC = () => {
               {/* Step 1: Slower typing animation */}
               {animPhase === 'typing' && (
                 <div className="flex items-center space-x-2 font-mono text-sm">
-                  <span className="text-[#7EE787] font-bold select-none shrink-0">
+                  <span className="text-[var(--prompt-green)] font-bold select-none shrink-0">
                     sahid@portfolio:~$
                   </span>
-                  <span className="text-[#79C0FF] font-semibold flex items-center">
+                  <span className="text-[var(--command-cyan)] font-semibold flex items-center">
                     <span>{typedCommand}</span>
-                    <span className="inline-block w-[8.5px] h-[1.15em] bg-[#7EE787] cursor-blink align-text-bottom select-none ml-[1px]" />
+                    <span className="inline-block w-[8.5px] h-[1.15em] bg-[var(--prompt-green)] cursor-blink align-text-bottom select-none ml-[1px]" />
                   </span>
                 </div>
               )}
@@ -479,10 +517,10 @@ export const TerminalWindow: React.FC = () => {
               {(animPhase === 'streaming' || animPhase === 'loading-bar') && (
                 <div className="space-y-3 font-mono text-sm">
                   <div className="flex items-center space-x-2">
-                    <span className="text-[#7EE787] font-bold select-none shrink-0">
+                    <span className="text-[var(--prompt-green)] font-bold select-none shrink-0">
                       sahid@portfolio:~$
                     </span>
-                    <span className="text-[#79C0FF] font-semibold">welcome</span>
+                    <span className="text-[var(--command-cyan)] font-semibold">welcome</span>
                   </div>
                   <TerminalOutput
                     entries={[
@@ -500,22 +538,22 @@ export const TerminalWindow: React.FC = () => {
               {/* Step 3: Arch Linux Pacman ILoveCandy Loading Animation across window width */}
               {animPhase === 'loading-bar' && (
                 <div className="pt-2 font-mono text-xs sm:text-sm whitespace-pre flex items-center overflow-x-hidden">
-                  <span className="text-[#7EE787] font-bold">[</span>
+                  <span className="text-[var(--prompt-green)] font-bold">[</span>
                   {loadPercent < 100 ? (
                     <>
-                      <span className="text-[#7EE787] font-bold">{eatenDashes}</span>
+                      <span className="text-[var(--prompt-green)] font-bold">{eatenDashes}</span>
                       <span className="text-[#F2CC60] font-bold">{pacmanChar}</span>
-                      <span className="text-[#8B949E] tracking-wider">{pelletsAhead}</span>
+                      <span className="text-[var(--text-secondary)] tracking-wider">{pelletsAhead}</span>
                     </>
                   ) : (
-                    <span className="text-[#7EE787] font-bold">{'-'.repeat(barLength)}</span>
+                    <span className="text-[var(--prompt-green)] font-bold">{'-'.repeat(barLength)}</span>
                   )}
-                  <span className="text-[#7EE787] font-bold">]</span>
-                  <span className="text-[#7EE787] font-bold ml-2.5">
+                  <span className="text-[var(--prompt-green)] font-bold">]</span>
+                  <span className="text-[var(--command-cyan)] font-bold ml-2.5">
                     {String(loadPercent).padStart(3, ' ')}%
                   </span>
                   {loadPercent === 100 && (
-                    <span className="text-[#7EE787] font-bold ml-2">[ OK ]</span>
+                    <span className="text-[var(--prompt-green)] font-bold ml-2">[ OK ]</span>
                   )}
                 </div>
               )}

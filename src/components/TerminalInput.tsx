@@ -126,8 +126,8 @@ export const TerminalInput: React.FC<TerminalInputProps> = ({
   return (
     <div className="mt-2 font-mono text-sm">
       {completionSuggestions.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-2 p-2 rounded bg-[#161B22] border border-[#30363D] text-xs text-[#79C0FF]">
-          <span className="text-[#8B949E]">Suggestions:</span>
+        <div className="flex flex-wrap gap-2 mb-2 p-2 rounded bg-[var(--term-header)] border border-[var(--term-border)] text-xs text-[var(--command-cyan)]">
+          <span className="text-[var(--text-secondary)]">Suggestions:</span>
           {completionSuggestions.map((s, idx) => (
             <span
               key={idx}
@@ -140,7 +140,7 @@ export const TerminalInput: React.FC<TerminalInputProps> = ({
                 setCompletionSuggestions([])
                 inputRef.current?.focus()
               }}
-              className="cursor-pointer hover:underline text-[#7EE787]"
+              className="cursor-pointer hover:underline text-[var(--prompt-green)]"
             >
               {s}
             </span>
@@ -152,24 +152,24 @@ export const TerminalInput: React.FC<TerminalInputProps> = ({
         className="flex items-center space-x-2 cursor-text"
         onClick={() => inputRef.current?.focus()}
       >
-        <span className="text-[#7EE787] font-bold select-none shrink-0">
+        <span className="text-[var(--prompt-green)] font-bold select-none shrink-0">
           sahid@portfolio:{promptPath}$
         </span>
 
         <div className="relative flex-1 flex items-center min-h-[1.5rem]">
           {/* Visual text with bold fat VS Code style block blinker */}
           <div className="font-mono text-sm pointer-events-none select-none flex items-center whitespace-pre leading-none">
-            <span className="text-[#E6EDF3]">{beforeCursor}</span>
+            <span className="text-[var(--text-primary)]">{beforeCursor}</span>
             {isFocused && (
               charAtCursor !== undefined ? (
-                <span className="bg-[#7EE787] text-[#15181E] font-bold cursor-blink inline-block px-[0.5px]">
+                <span className="bg-[var(--prompt-green)] text-[var(--term-surface)] font-bold cursor-blink inline-block px-[0.5px]">
                   {charAtCursor}
                 </span>
               ) : (
-                <span className="inline-block w-[8.5px] h-[1.15em] bg-[#7EE787] cursor-blink align-text-bottom select-none" />
+                <span className="inline-block w-[8.5px] h-[1.15em] bg-[var(--prompt-green)] cursor-blink align-text-bottom select-none" />
               )
             )}
-            <span className="text-[#E6EDF3]">{afterCursor}</span>
+            <span className="text-[var(--text-primary)]">{afterCursor}</span>
           </div>
 
           {/* Actual transparent input taking focus and keystrokes */}

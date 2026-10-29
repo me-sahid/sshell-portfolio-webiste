@@ -28,7 +28,7 @@ function renderContentWithLinks(text: string) {
         target="_blank"
         rel="noopener noreferrer"
         download={isPdf ? 'Sahid_Al_Hassan_Resume.pdf' : undefined}
-        className="text-[#79C0FF] underline hover:text-[#7EE787] transition-colors"
+        className="text-[var(--command-cyan)] underline hover:text-[var(--prompt-green)] transition-colors"
       >
         {url}
       </a>
@@ -71,7 +71,7 @@ function renderFormattedBlock(content: string) {
         // Section header (e.g. "background", "projects", "commands")
         if (sectionKeywords.has(lower) || (lower.endsWith(':') && lower.length < 25 && !lower.includes(' '))) {
           return (
-            <div key={idx} className="text-[#7EE787] font-semibold pt-1">
+            <div key={idx} className="text-[var(--prompt-green)] font-semibold pt-1">
               {line}
             </div>
           )
@@ -80,7 +80,7 @@ function renderFormattedBlock(content: string) {
         // Title line (e.g. "sahid al hassan")
         if (idx === 0 && lower === 'sahid al hassan') {
           return (
-            <div key={idx} className="text-base font-bold text-[#E6EDF3] tracking-wide">
+            <div key={idx} className="text-base font-bold text-[var(--text-primary)] tracking-wide">
               {line}
             </div>
           )
@@ -89,7 +89,7 @@ function renderFormattedBlock(content: string) {
         // Subtitle line immediately following title
         if (idx === 1 && lines[0]?.trim().toLowerCase() === 'sahid al hassan') {
           return (
-            <div key={idx} className="text-sm text-[#8B949E] pb-1">
+            <div key={idx} className="text-sm text-[var(--text-secondary)] pb-1">
               {line}
             </div>
           )
@@ -101,15 +101,15 @@ function renderFormattedBlock(content: string) {
           const text = trimmed.substring(2)
           return (
             <div key={idx} className="flex items-start space-x-1.5 pl-0.5">
-              <span className="text-[#8B949E] select-none shrink-0">{bullet}</span>
-              <span className="text-[#E6EDF3]">{renderContentWithLinks(text)}</span>
+              <span className="text-[var(--text-secondary)] select-none shrink-0">{bullet}</span>
+              <span className="text-[var(--text-primary)]">{renderContentWithLinks(text)}</span>
             </div>
           )
         }
 
         // Standard line
         return (
-          <div key={idx} className="text-[#E6EDF3]">
+          <div key={idx} className="text-[var(--text-primary)]">
             {renderContentWithLinks(line)}
           </div>
         )
@@ -125,10 +125,10 @@ export const TerminalOutput: React.FC<TerminalOutputProps> = ({ entries }) => {
         if (entry.type === 'input') {
           return (
             <div key={entry.id} className="flex items-start space-x-2">
-              <span className="text-[#7EE787] font-bold shrink-0 select-none">
+              <span className="text-[var(--prompt-green)] font-bold shrink-0 select-none">
                 sahid@portfolio:{entry.cwd || '~'}$
               </span>
-              <span className="text-[#79C0FF] font-semibold">{entry.command}</span>
+              <span className="text-[var(--command-cyan)] font-semibold">{entry.command}</span>
             </div>
           )
         }
